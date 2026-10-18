@@ -99,5 +99,14 @@ Agreed before Phase 1 (2026-10-18).
 - Vercel Hobby: `vercel.json` runs the cron daily at 04:00 UTC; users whose week closes later (e.g. the Americas) are picked up by the next run or the dashboard fallback. Hourly: change the schedule to `0 * * * *` (Pro) or call the endpoint from an external scheduler.
 - The seed's half-marathon user has a two-week slump, so the real weekly job produces the demo's pending adjustment.
 
+## Activities, Quick log, PWA, e2e (Phase 7)
+- Splits are computed from the GPS track (haversine), interpolated at each km and **rescaled to the watch's total distance** (GPS drifts). Shown per km in both unit systems.
+- Manual runs: `externalId = manual:<uuid>`, stored at the given local time (default 12:00) in the user's time zone, linked to that day's session with the same matcher as imports (`services/activity-linking.ts`). Only manual runs can be deleted — an imported run would return with the next sync. Pace sanity check: 2:00–20:00 /km.
+- Bottom tab bar: Dashboard · Plan · Log · Runs · Settings (five fit a phone); Goals is in the desktop nav and linked from the dashboard.
+- Dashboard keeps proposals decided in the last 24 h visible, so the "Applied N changes" outcome doesn't vanish.
+- PWA: `app/manifest.ts`, icons rendered with `next/og` (no binaries in the repo), hand-written `public/sw.js` — network-only for pages and data (personal data is never cached), cache-first for hashed `/_next/static` assets, `/offline` fallback for navigations. Registered in production builds only; served with `no-cache`.
+- Map: Leaflet + OSM tiles via `react-leaflet`, client-only (`next/dynamic` with `ssr: false`), scroll-zoom off so it doesn't trap page scrolling.
+- Playwright runs a production build on :3200 against `TEST_DATABASE_URL`. The journey's arrange step backdates the new user's plan by 5 weeks **directly in the test database** (so closed weeks exist); everything else goes through the UI and the real import endpoint. No test-only code paths in the app.
+
 ## Fixtures
 - Health Auto Export fixtures are provisional (`src/lib/import/__fixtures__/hae/provisional-*.json`) until a real anonymized payload arrives.

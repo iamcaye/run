@@ -4,3 +4,4 @@ export * from "./load";
 export * from "./prediction";
 export * from "./types";
 export * from "./volume";
+export * from "./splits";

@@ -26,8 +26,15 @@ const STATUS_LABELS: Record<AdjustmentView["status"], string> = {
 export function AdjustmentCard({ adjustment, units }: { adjustment: AdjustmentView; units: Units }) {
   const [result, setResult] = useState<FormState | null>(null);
   const [pending, start] = useTransition();
+  // Keep the outcome on screen after the server re-renders this card as decided.
+  const [outcome, setOutcome] = useState<string | null>(null);
   const decided = adjustment.status !== "proposed" || result?.status === "success";
-  const run = (action: (id: string) => Promise<FormState>) => start(async () => setResult(await action(adjustment.id)));
+  const run = (action: (id: string) => Promise<FormState>) =>
+    start(async () => {
+      const r = await action(adjustment.id);
+      setResult(r);
+      if (r.status === "success") setOutcome(r.message ?? null);
+    });
 
   return (
     <article className="flex flex-col gap-3 rounded-lg border border-border p-3">
@@ -70,7 +77,7 @@ export function AdjustmentCard({ adjustment, units }: { adjustment: AdjustmentVi
         </div>
       ) : null}
       <FormError>{result?.status === "error" ? result.message : null}</FormError>
-      <FormSuccess>{result?.status === "success" ? result.message : null}</FormSuccess>
+      <FormSuccess>{outcome}</FormSuccess>
     </article>
   );
 }

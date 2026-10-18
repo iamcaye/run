@@ -14,7 +14,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             Race Training
           </Link>
           <div className="hidden flex-1 sm:block">
-            <AppNav />
+            <AppNav variant="desktop" />
           </div>
           <div className="flex min-w-0 items-center gap-3 text-sm text-muted">
             <span className="truncate">{user.name}</span>
@@ -24,7 +24,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       </header>
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 pt-6 pb-24 sm:pb-6">{children}</main>
       <div className="sm:hidden">
-        <AppNav />
+        <AppNav variant="mobile" />
       </div>
     </div>
   );

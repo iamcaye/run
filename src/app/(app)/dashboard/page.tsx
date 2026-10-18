@@ -65,9 +65,14 @@ export default async function DashboardPage() {
       {prompts}
 
       <section aria-labelledby="goal-title" className="flex flex-col gap-1">
-        <h1 id="goal-title" className="text-xl font-semibold">
-          {goal.name}
-        </h1>
+        <div className="flex items-baseline justify-between gap-2">
+          <h1 id="goal-title" className="text-xl font-semibold">
+            {goal.name}
+          </h1>
+          <Link href="/goals" className="shrink-0 text-sm text-accent">
+            Goals →
+          </Link>
+        </div>
         <p className="text-sm text-muted">
           {d.daysToRace !== null && d.daysToRace > 0
             ? `${d.daysToRace} day${d.daysToRace === 1 ? "" : "s"} to go`
