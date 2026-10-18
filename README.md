@@ -4,7 +4,7 @@ Multi-user, mobile-first web app for planning and tracking training toward race 
 
 See [`project.md`](./project.md) for the spec and [`docs/decisions.md`](./docs/decisions.md) for agreed deviations.
 
-> Status: **Phase 4** — Health Auto Export import (tokens, endpoint, mapping, matching, sync status). Earlier: plan generator + Plan page (3); settings, goals, onboarding (2); scaffold, schema, auth, tenancy DAL, config, seed (1).
+> Status: **Phase 5** — metrics (`src/lib/metrics`) + Dashboard. Earlier: Health Auto Export import (4); plan generator + Plan page (3); settings, goals, onboarding (2); scaffold, schema, auth, tenancy DAL, config, seed (1).
 
 ## Stack
 Next.js 16 (App Router) · TypeScript (strict) · Postgres + Drizzle · Better Auth · Zod · Tailwind v4 · Vitest + fast-check · Playwright

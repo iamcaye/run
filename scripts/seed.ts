@@ -14,7 +14,7 @@ import { forUser, type GoalInput, type SettingsPatch } from "@/server/dal";
 import { ingestPayload } from "@/services/health-import";
 import { createImportToken } from "@/services/import-tokens";
 import { createPlanIfMissing } from "@/services/plans";
-import { demoWorkouts } from "./seed-activities";
+import { demoWorkouts, type DemoRunProfile } from "./seed-activities";
 
 export const DEMO_PASSWORD = "demo-password-123";
 
@@ -25,7 +25,7 @@ type DemoUser = {
   goal: GoalInput;
   /** The plan started this many days ago. */
   planStartedDaysAgo: number;
-  runs: { center: { lat: number; lon: number }; easyPace: number; completion: number; seed: number };
+  runs: DemoRunProfile;
 };
 
 const DEMO_USERS: DemoUser[] = [
@@ -51,7 +51,14 @@ const DEMO_USERS: DemoUser[] = [
       notes: "First 10K — just finish strong.",
     },
     planStartedDaysAgo: 8,
-    runs: { center: { lat: 40.4168, lon: -3.7038 }, easyPace: 400, completion: 0.85, seed: 1 },
+    runs: {
+      center: { lat: 40.4168, lon: -3.7038 },
+      easyPace: 400,
+      completion: 0.85,
+      seed: 1,
+      preplanWeeks: 5,
+      preplanHard: null,
+    },
   },
   {
     name: "Marco (Half intermediate)",
@@ -77,7 +84,15 @@ const DEMO_USERS: DemoUser[] = [
       notes: null,
     },
     planStartedDaysAgo: 22,
-    runs: { center: { lat: 41.9028, lon: 12.4964 }, easyPace: 360, completion: 0.9, seed: 2 },
+    runs: {
+      center: { lat: 41.9028, lon: 12.4964 },
+      easyPace: 360,
+      completion: 0.9,
+      seed: 2,
+      preplanWeeks: 5,
+      // A weekly tempo-ish run (HR ≥ 80% of reserve) so the prediction has a hard effort.
+      preplanHard: { paceSecPerKm: 292, avgHr: 164, km: 10 },
+    },
   },
 ];
 
@@ -106,7 +121,16 @@ async function main() {
     const sessions = await scope.sessions.listForGoal(active.id);
     const { summary: token } = await createImportToken(scope, "Demo iPhone");
     const payload = JSON.stringify({
-      data: { workouts: demoWorkouts({ sessions, today, timeZone: settings.timezone, ...demo.runs }) },
+      data: {
+        workouts: demoWorkouts({
+          sessions,
+          today,
+          timeZone: settings.timezone,
+          runDays: settings.runDays,
+          startWeeklyKm: demo.goal.startWeeklyKm,
+          profile: demo.runs,
+        }),
+      },
     });
     const imported = await ingestPayload(scope, token.id, payload, Buffer.byteLength(payload));
     const runs = imported.status === "ok" ? imported.summary.imported : 0;

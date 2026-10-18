@@ -173,6 +173,22 @@ export const METRICS = {
     rest: 0,
   } satisfies Readonly<Record<SessionType, number>>,
   defaultRpeUnplanned: 4,
+  /** HR-based RPE estimate: [fraction of heart-rate reserve, RPE] points, linearly interpolated. */
+  rpeFromHrr: [
+    [0.4, 2],
+    [0.5, 3],
+    [0.6, 4],
+    [0.7, 5],
+    [0.8, 7],
+    [0.9, 8],
+    [0.95, 9],
+    [1.0, 10],
+  ] as readonly (readonly [number, number])[],
+  /** Karvonen zone lower bounds as fractions of heart-rate reserve (Z1…Z5); Z5 tops out at max HR. */
+  hrZoneBounds: [0.5, 0.6, 0.7, 0.8, 0.9] as readonly number[],
+  /** HR samples further apart than this don't extend time-in-zone beyond it (s). */
+  hrMaxSampleGapSeconds: 300,
+  prediction: { minKm: 3, minFractionOfGoal: 0.25, hardRpe: 7, hardHrr: 0.8 },
 } as const;
 
 export const ADAPTATION = {
