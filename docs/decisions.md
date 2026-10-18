@@ -86,5 +86,18 @@ Agreed before Phase 1 (2026-10-18).
 - Charts follow the dataviz method: planned = categorical slot 1 (blue), run = slot 2 (orange), validated pair in both modes (a neutral gray "planned" failed the chroma floor); single-series ACWR without legend; the risk band uses status colours with in-plot text labels; every chart has a hover tooltip and a "Show data" table; no dual axes; prediction vs target is a stat tile, not a chart.
 - The seed adds 5 weeks of pre-plan running (and a weekly harder run for the half-marathon user) so ACWR and the prediction have real history.
 
+## Weekly adaptation (Phase 6)
+- One volume mechanism for inactivity and low compliance: cap future training weeks at `L₀ × 1.1^i` (i = calendar weeks after the closed week), so the plan restarts from L₀ and rejoins the original curve on its own. Inactivity: L₀ = planned km 1 week back (gap 8–14 days) or 2 weeks back (> 14). Low compliance (< 70% two weeks running): L₀ = the closed week's planned km ("repeat"). Taper and race weeks are never changed.
+- ACWR rule only with a full 28-day history; next week scaled to 85% and the last quality session becomes an easy run.
+- Precedence: inactivity > ACWR > compliance; at most one volume proposal per week. **No volume rules when the user has no runs at all** (sync probably not set up yet).
+- Missed long run: deliberately no rule (never made up or stacked). Tested.
+- Scaling touches easy/long/strides only; quality sessions keep their structure; runs never go below 2 km. Kept sessions (past, edited, completed) count toward a week's total but are never changed.
+- Goal review: last 3 quality sessions ≥ 3% faster than their **expected average pace** (warm-up/cool-down at easy pace, main set at target) → suggestion with no changes; not repeated within 4 weeks; target-time goals only.
+- Accept re-checks each session against `before` inside a transaction (also: still in the future, not edited, no linked run) and reports applied/skipped. A new weekly run supersedes older pending proposals.
+- Runs are claimed with an upsert: new rows, failed runs, and runs stuck in `running` > 15 min can be claimed; done/fresh runs can't. The cron and the dashboard fallback call the same service.
+- Week close: the user's `weekStart` day at 03:00 local. Proposals are worded "this week" — the job runs as the new week starts.
+- Vercel Hobby: `vercel.json` runs the cron daily at 04:00 UTC; users whose week closes later (e.g. the Americas) are picked up by the next run or the dashboard fallback. Hourly: change the schedule to `0 * * * *` (Pro) or call the endpoint from an external scheduler.
+- The seed's half-marathon user has a two-week slump, so the real weekly job produces the demo's pending adjustment.
+
 ## Fixtures
 - Health Auto Export fixtures are provisional (`src/lib/import/__fixtures__/hae/provisional-*.json`) until a real anonymized payload arrives.

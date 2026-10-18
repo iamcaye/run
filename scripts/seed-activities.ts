@@ -4,7 +4,7 @@
  */
 import { TZDate } from "@date-fns/tz";
 import { format } from "date-fns";
-import { addDays, isoWeekday, type LocalDate } from "@/lib/time";
+import { addDays, isoWeekday, startOfWeek, type IsoWeekday, type LocalDate } from "@/lib/time";
 import type { PlannedSession } from "@/server/dal";
 
 /** Small deterministic PRNG so seeds are reproducible. */
@@ -72,6 +72,9 @@ export type DemoRunProfile = {
   preplanWeeks: number;
   /** One faster run per pre-plan week at this pace and HR (null: easy only). */
   preplanHard: { paceSecPerKm: number; avgHr: number; km: number } | null;
+  /** Weeks right before the current one with lower completion (e.g. illness), or 0. */
+  slumpWeeks: number;
+  slumpCompletion: number;
 };
 
 export function demoWorkouts(input: {
@@ -79,6 +82,7 @@ export function demoWorkouts(input: {
   today: LocalDate;
   timeZone: string;
   runDays: readonly number[];
+  weekStart: IsoWeekday;
   startWeeklyKm: number;
   profile: DemoRunProfile;
 }): Record<string, unknown>[] {
@@ -108,10 +112,13 @@ export function demoWorkouts(input: {
     );
   }
 
-  // Planned sessions in the past: most of them run, close to target.
+  // Planned sessions in the past: most of them run, close to target (fewer during a slump).
+  const slumpEnd = startOfWeek(input.today, input.weekStart);
+  const slumpStart = addDays(slumpEnd, -7 * profile.slumpWeeks);
   for (const s of input.sessions) {
     if (s.date >= input.today || s.type === "rest" || s.type === "race") continue;
-    if (ctx.rand() > profile.completion) continue;
+    const inSlump = s.date >= slumpStart && s.date < slumpEnd;
+    if (ctx.rand() > (inSlump ? profile.slumpCompletion : profile.completion)) continue; // missed
     const hard = ["tempo", "intervals", "race_pace"].includes(s.type);
     workouts.push(
       buildWorkout(ctx, {

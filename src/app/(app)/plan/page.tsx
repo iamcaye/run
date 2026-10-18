@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdjustmentCard } from "@/components/adjustments/adjustment-card";
 import { GoalFacts } from "@/components/goals/goal-summary";
 import { PHASE_BG } from "@/components/plan/phase";
 import { PlanOverview } from "@/components/plan/plan-overview";
@@ -10,6 +11,7 @@ import { addDays, startOfWeek, type IsoWeekday } from "@/lib/time";
 import { formatDistance } from "@/lib/units";
 import { requireUserContext } from "@/server/context";
 import type { PlannedSession } from "@/server/dal";
+import { toAdjustmentView } from "@/services/adjustment-view";
 import { planInsights } from "@/services/plans";
 
 export const metadata = { title: "Plan · Race Training" };
@@ -123,13 +125,11 @@ export default async function PlanPage() {
         {adjustments.length === 0 ? (
           <p className="text-sm text-muted">No adjustments yet. Weekly check-ins will propose changes here.</p>
         ) : (
-          <ul className="flex flex-col gap-2 text-sm">
+          <div className="flex flex-col gap-2">
             {adjustments.map((a) => (
-              <li key={a.id}>
-                <span className="text-muted">{a.runWeekStart} · {a.status}</span> — {a.reason}
-              </li>
+              <AdjustmentCard key={a.id} adjustment={toAdjustmentView(a, sessions)} units={settings.units} />
             ))}
-          </ul>
+          </div>
         )}
       </Card>
     </div>

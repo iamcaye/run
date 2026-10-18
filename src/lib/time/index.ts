@@ -47,6 +47,18 @@ export function localDateOf(instant: Date, timeZone: string): LocalDate {
   return format(new TZDate(instant, timeZone), "yyyy-MM-dd");
 }
 
+/**
+ * Start of the most recent week that has fully closed for a user: the previous week, once it's
+ * past `closeHour` local time on the first day of the current week (e.g. Monday 03:00).
+ */
+export function lastClosedWeekStart(now: Date, timeZone: string, weekStart: IsoWeekday, closeHour: number): LocalDate {
+  const local = new TZDate(now, timeZone);
+  const today = format(local, "yyyy-MM-dd");
+  const current = startOfWeek(today, weekStart);
+  const closed = today > current || local.getHours() >= closeHour;
+  return addDays(current, closed ? -7 : -14);
+}
+
 // Date-only arithmetic is done in UTC so DST never shifts a day.
 const toUtc = (d: LocalDate) => new Date(`${d}T00:00:00Z`);
 const fromUtc = (d: Date): LocalDate => d.toISOString().slice(0, 10);

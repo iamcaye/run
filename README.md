@@ -4,7 +4,7 @@ Multi-user, mobile-first web app for planning and tracking training toward race 
 
 See [`project.md`](./project.md) for the spec and [`docs/decisions.md`](./docs/decisions.md) for agreed deviations.
 
-> Status: **Phase 5** — metrics (`src/lib/metrics`) + Dashboard. Earlier: Health Auto Export import (4); plan generator + Plan page (3); settings, goals, onboarding (2); scaffold, schema, auth, tenancy DAL, config, seed (1).
+> Status: **Phase 6** — weekly plan adaptation (cron + dashboard fallback + proposals). Earlier: metrics + Dashboard (5); Health Auto Export import (4); plan generator + Plan page (3); settings, goals, onboarding (2); scaffold, schema, auth, tenancy DAL, config, seed (1).
 
 ## Stack
 Next.js 16 (App Router) · TypeScript (strict) · Postgres + Drizzle · Better Auth · Zod · Tailwind v4 · Vitest + fast-check · Playwright
@@ -110,7 +110,19 @@ curl -X POST http://localhost:3000/api/health-import \
   --data-binary @src/lib/import/__fixtures__/hae/provisional-v2-outdoor-run.json
 ```
 
-## Deployment & cron
+## Weekly adaptation (cron)
+
+`GET /api/cron/adapt-plans` with `Authorization: Bearer $CRON_SECRET` finds users whose week has just closed **in their own time zone** (past 03:00 on their week-start day), claims a run per (goal, week), runs `adaptPlan`, and stores proposals for the user to accept or reject. It's idempotent: call it as often as you like.
+
+```bash
+# trigger locally
+curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/adapt-plans
+```
+
+- `vercel.json` schedules it **daily** (`0 4 * * *`), which Vercel Hobby allows. Hourly (`0 * * * *`) needs **Pro**, or call the endpoint from an external scheduler such as a GitHub Actions workflow on a cron with the secret as a repository secret.
+- Opening the dashboard runs the same job for that user if their last closed week hasn't been processed yet, so nobody waits for the next cron run.
+
+## Deployment
 Filled in during later phases. Note: on Vercel **Hobby** the cron runs once a day; hourly needs **Pro** or an external scheduler (e.g. a GitHub Actions workflow calling the endpoint with `CRON_SECRET`).
 
 ## Roadmap (post-v1)
