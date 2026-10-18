@@ -14,6 +14,12 @@
   --phase-specific: #f97316;
   --phase-taper: #a7f3d0;
   --phase-race: #dc2626;
+  /* Charts: categorical slots 1–2 (validated pair) + fixed status colours. */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -31,6 +37,8 @@
     --phase-specific: #ea580c;
     --phase-taper: #047857;
     --phase-race: #f87171;
+    --series-1: #3987e5;
+    --series-2: #d95926;
   }
 }
 
@@ -48,6 +56,11 @@
   --color-phase-specific: var(--phase-specific);
   --color-phase-taper: var(--phase-taper);
   --color-phase-race: var(--phase-race);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-status-good: var(--status-good);
+  --color-status-warning: var(--status-warning);
+  --color-status-critical: var(--status-critical);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

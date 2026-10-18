@@ -42,6 +42,11 @@ export function todayInTz(timeZone: string, now: Date = new Date()): LocalDate {
   return format(new TZDate(now, timeZone), "yyyy-MM-dd");
 }
 
+/** The calendar date an instant falls on in `timeZone`. */
+export function localDateOf(instant: Date, timeZone: string): LocalDate {
+  return format(new TZDate(instant, timeZone), "yyyy-MM-dd");
+}
+
 // Date-only arithmetic is done in UTC so DST never shifts a day.
 const toUtc = (d: LocalDate) => new Date(`${d}T00:00:00Z`);
 const fromUtc = (d: Date): LocalDate => d.toISOString().slice(0, 10);

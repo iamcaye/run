@@ -77,5 +77,14 @@ Agreed before Phase 1 (2026-10-18).
 - `pnpm reprocess [--user <id>]` re-runs stored payloads oldest-first (idempotent).
 - The seed builds HAE-format payloads for past planned sessions and sends them through the real pipeline.
 
+## Metrics & dashboard (Phase 5)
+- RPE for load: logged → estimated from average HR via heart-rate reserve (piecewise table in config) → session-type default → generic default. The dashboard notes when most recent load is estimated.
+- ACWR is **not shown with < 28 days of history** (`insufficientHistory`): with one week of runs it is exactly 4.0 by construction. The tile says "available after 4 weeks of runs"; the chart only plots days with a full window. (Phase 6's ACWR rule should honour the same flag.)
+- Race prediction prefers **hard efforts** (linked to tempo/intervals/race-pace/race, logged RPE ≥ 7, or HR ≥ 80% of reserve) with distance ≥ max(3 km, 25% of the goal) in the last 6 weeks; with none it falls back to any comparable run and says it's likely conservative. An easy run predicts easy pace, not race fitness.
+- Time-in-zone: each HR sample counts until the next one (last until the end), capped at 5 min per gap.
+- Weeks/days in all metrics use local dates computed with the user's time zone (`localDateOf`), so a 23:30 run counts on its own day.
+- Charts follow the dataviz method: planned = categorical slot 1 (blue), run = slot 2 (orange), validated pair in both modes (a neutral gray "planned" failed the chroma floor); single-series ACWR without legend; the risk band uses status colours with in-plot text labels; every chart has a hover tooltip and a "Show data" table; no dual axes; prediction vs target is a stat tile, not a chart.
+- The seed adds 5 weeks of pre-plan running (and a weekly harder run for the half-marathon user) so ACWR and the prediction have real history.
+
 ## Fixtures
 - Health Auto Export fixtures are provisional (`src/lib/import/__fixtures__/hae/provisional-*.json`) until a real anonymized payload arrives.
