@@ -25,7 +25,7 @@ export async function createGoalAction(_prev: FormState, formData: FormData): Pr
     formValues(formData),
   );
   if (!parsed.success) return invalid(parsed.error);
-  const result = await goals.createGoal(scope, parsed.data, {
+  const result = await goals.createGoal(scope, parsed.data, { settings, today }, {
     makeActive: formData.get("makeActive") === "on",
   });
   if (!result.ok) return failure(result.message);
@@ -59,13 +59,13 @@ export async function logResultAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const { scope, today } = await requireUserContext();
+  const { scope, settings, today } = await requireUserContext();
   if (!uuid.safeParse(goalId).success) return failure("Goal not found");
   const seconds = parseDuration(String(formData.get("resultTime") ?? ""));
   if (!seconds) {
     return { status: "error", fieldErrors: { resultTime: ["Enter your time like 1:43:12 or 47:55"] } };
   }
-  const result = await goals.logResult(scope, goalId, seconds, today);
+  const result = await goals.logResult(scope, goalId, seconds, { settings, today });
   if (!result.ok) return failure(result.message);
   revalidateGoals();
   const next = result.value.nextActive;
@@ -77,23 +77,23 @@ export async function logResultAction(
 
 /** Simple goal transitions triggered by a button (no form state). */
 export async function activateGoalAction(goalId: string): Promise<void> {
-  const { scope } = await requireUserContext();
+  const { scope, settings, today } = await requireUserContext();
   if (!uuid.safeParse(goalId).success) return;
-  await goals.activateGoal(scope, goalId);
+  await goals.activateGoal(scope, goalId, { settings, today });
   revalidateGoals();
 }
 
 export async function abandonGoalAction(goalId: string): Promise<void> {
-  const { scope, today } = await requireUserContext();
+  const { scope, settings, today } = await requireUserContext();
   if (!uuid.safeParse(goalId).success) return;
-  await goals.abandonGoal(scope, goalId, today);
+  await goals.abandonGoal(scope, goalId, { settings, today });
   revalidateGoals();
 }
 
 export async function deleteGoalAction(goalId: string): Promise<void> {
-  const { scope, today } = await requireUserContext();
+  const { scope, settings, today } = await requireUserContext();
   if (!uuid.safeParse(goalId).success) return;
-  await goals.deleteGoal(scope, goalId, today);
+  await goals.deleteGoal(scope, goalId, { settings, today });
   revalidateGoals();
   redirect("/goals");
 }

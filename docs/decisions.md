@@ -53,5 +53,17 @@ Agreed before Phase 1 (2026-10-18).
 - Forms submit via `useFormAction` (onSubmit + transition) rather than `<form action>`, so React doesn't reset fields on validation errors.
 - Display name lives in Better Auth's `user.name`; account deletion uses Better Auth's `deleteUser` (password required).
 
+## Plan generator (Phase 3)
+- `generatePlan` returns `{ sessions, weeks, warnings, peakKm, deleteIds }` instead of a bare array: week summaries carry the volume targets the 10% invariant is checked against; warnings are typed codes rendered by `lib/planning/describe.ts`.
+- Race week is exempt from the +10% rule (a marathon alone exceeds 50% of peak). Progression rounds *down* to 0.5 km so rounding never breaks the rule. Week-1 volume has a floor (`minStartWeeklyKm`, 8 km) so tiny starting volumes can progress.
+- Maintenance weeks (lead time > 20 weeks) hold the starting volume flat.
+- Long-run share: 35% for half/marathon; 5K/10K 35/30/25% for ≤3/4/≥5 runs. Long ≤ cap and ≤ +2 km over the longest long run so far. Easy runs never exceed 85% of the week's long run (excess volume is left out rather than piled onto easy days).
+- A partial first week with ≤2 usable days gets easy runs only. Race-week shakeouts may be 2 km.
+- Spacing rules hold across week boundaries: all long-run dates (and the race date) are fixed before quality days are placed.
+- Regeneration builds *around* kept (past / user-edited / completed) sessions: they occupy their day, consume run slots and weekly km, satisfy a matching quality/long slot, and anchor the spacing rules. Long-run share and quality sizes still come from the full week's target. The curve keeps the plan's original start date so week numbering is stable.
+- A plan is generated when a goal becomes active (created as first goal, switched to, or promoted) and it has no sessions yet. Upcoming goals have no plan.
+- Plan warnings shown on the Plan page are recomputed from the plan's start date (generation is deterministic).
+- Editing a session (date, type, distance, notes) sets `isUserEdited`; changing the type clears its structure and re-derives the target pace. Two sessions can't share a day.
+
 ## Fixtures
 - Health Auto Export fixtures are provisional (`src/lib/import/__fixtures__/hae/provisional-*.json`) until a real anonymized payload arrives.

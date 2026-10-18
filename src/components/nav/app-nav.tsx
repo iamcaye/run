@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// Plan, Log and Activities join as their phases land.
+// Log and Activities join as their phases land.
 const LINKS = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/plan", label: "Plan" },
   { href: "/goals", label: "Goals" },
   { href: "/settings", label: "Settings" },
 ] as const;

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gte } from "drizzle-orm";
 import type { Db } from "@/server/db/client";
 import { activity, routePoint } from "@/server/db/schema";
 import { assertOwnsRawImport, assertOwnsSession } from "./ownership";
@@ -22,6 +22,15 @@ export function activitiesRepo(d: Db, userId: string) {
         .orderBy(desc(activity.startAt))
         .limit(limit)
         .offset(offset);
+    },
+
+    /** Activities that started at or after `since`, oldest first. */
+    since(since: Date): Promise<Activity[]> {
+      return d
+        .select()
+        .from(activity)
+        .where(and(eq(activity.userId, userId), gte(activity.startAt, since)))
+        .orderBy(asc(activity.startAt));
     },
 
     async get(id: string): Promise<Activity | null> {

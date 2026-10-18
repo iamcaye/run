@@ -4,7 +4,7 @@ Multi-user, mobile-first web app for planning and tracking training toward race 
 
 See [`project.md`](./project.md) for the spec and [`docs/decisions.md`](./docs/decisions.md) for agreed deviations.
 
-> Status: **Phase 2** — settings, goals CRUD, onboarding skeleton (on top of Phase 1: scaffold, schema, auth, tenancy DAL, config, seed).
+> Status: **Phase 3** — plan generator (`src/lib/planning`) + Plan page. Earlier: settings, goals, onboarding (2); scaffold, schema, auth, tenancy DAL, config, seed (1).
 
 ## Stack
 Next.js 16 (App Router) · TypeScript (strict) · Postgres + Drizzle · Better Auth · Zod · Tailwind v4 · Vitest + fast-check · Playwright
@@ -55,6 +55,7 @@ pnpm db:studio     # browse data
 pnpm test          # all
 pnpm test:unit     # pure domain logic (src/lib)
 pnpm test:db       # DAL / tenancy / services against TEST_DATABASE_URL (migrated automatically)
+FC_RUNS=5000 pnpm test:unit   # deeper property-based search (default 400 cases per property)
 pnpm lint && pnpm typecheck
 ```
 

@@ -1,15 +1,17 @@
 /**
  * Seeds two demo users. Re-running replaces them (matched by email).
  *
- * Phase 1 seeds accounts, settings and goals. Plans (phase 3), activities (phase 4) and a pending
- * adjustment (phase 6) are added here as those features land.
+ * Seeds accounts, settings, goals and plans (started a few weeks ago so there is history).
+ * Activities (phase 4) and a pending adjustment (phase 6) are added as those features land.
  */
 import "dotenv/config";
 import { inArray } from "drizzle-orm";
 import { auth } from "@/server/auth/auth";
 import { closeDb, db } from "@/server/db/client";
 import { user } from "@/server/db/schema";
+import { addDays, todayInTz } from "@/lib/time";
 import { forUser, type GoalInput, type SettingsPatch } from "@/server/dal";
+import { createPlanIfMissing } from "@/services/plans";
 
 export const DEMO_PASSWORD = "demo-password-123";
 
@@ -18,6 +20,8 @@ type DemoUser = {
   email: string;
   settings: SettingsPatch;
   goal: GoalInput;
+  /** The plan started this many days ago. */
+  planStartedDaysAgo: number;
 };
 
 const DEMO_USERS: DemoUser[] = [
@@ -42,6 +46,7 @@ const DEMO_USERS: DemoUser[] = [
       level: "beginner",
       notes: "First 10K — just finish strong.",
     },
+    planStartedDaysAgo: 8,
   },
   {
     name: "Marco (Half intermediate)",
@@ -66,6 +71,7 @@ const DEMO_USERS: DemoUser[] = [
       level: "intermediate",
       notes: null,
     },
+    planStartedDaysAgo: 22,
   },
 ];
 
@@ -86,8 +92,12 @@ async function main() {
     const scope = forUser(created.id);
     await scope.settings.update({ ...demo.settings, onboardingCompletedAt: new Date() });
     const goal = await scope.goals.create(demo.goal);
-    await scope.goals.activate(goal.id);
-    console.info(`Seeded ${demo.email} (goal: ${goal.name})`);
+    const active = await scope.goals.activate(goal.id);
+    if (!active) throw new Error("activate failed");
+    const settings = await scope.settings.get();
+    const today = todayInTz(settings.timezone);
+    const plan = await createPlanIfMissing(scope, active, settings, today, addDays(today, -demo.planStartedDaysAgo));
+    console.info(`Seeded ${demo.email} (goal: ${goal.name}, ${plan?.sessions.length ?? 0} sessions)`);
   }
   console.info(`\nDemo password for all users: ${DEMO_PASSWORD}`);
 }
