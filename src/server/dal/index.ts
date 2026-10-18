@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db, type Db } from "@/server/db/client";
 import { user } from "@/server/db/schema";
 import { activitiesRepo } from "./activities";
-import { adjustmentsRepo } from "./adjustments";
+import { adjustmentRunsRepo, adjustmentsRepo } from "./adjustments";
 import { goalsRepo } from "./goals";
 import { importTokensRepo, rawImportsRepo } from "./imports";
 import { profileRepo } from "./profile";
@@ -29,6 +29,7 @@ export function forUser(userId: string, database: Db = db()) {
     importTokens: importTokensRepo(database, userId),
     rawImports: rawImportsRepo(database, userId),
     adjustments: adjustmentsRepo(database, userId),
+    adjustmentRuns: adjustmentRunsRepo(database, userId),
     /** Deletes the user; FKs cascade to every user-owned table, including raw imports. */
     async deleteAccount(): Promise<void> {
       await database.delete(user).where(eq(user.id, userId));

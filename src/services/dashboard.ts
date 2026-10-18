@@ -19,7 +19,8 @@ import {
 } from "@/lib/metrics";
 import type { Phase } from "@/lib/planning/types";
 import { addDays, daysBetween, localDateOf, startOfWeek, type IsoWeekday, type LocalDate } from "@/lib/time";
-import type { Goal, PlanAdjustment, PlannedSession, Settings, UserScope } from "@/server/dal";
+import type { Goal, PlannedSession, Settings, UserScope } from "@/server/dal";
+import { toAdjustmentView, type AdjustmentView } from "./adjustment-view";
 
 export type DashboardSession = PlannedSession & { status: SessionStatus; actualKm: number | null };
 
@@ -32,7 +33,7 @@ export type Dashboard = {
   totalWeeks: number | null;
   thisWeek: DashboardSession[];
   thisWeekVolume: WeekVolume | null;
-  pendingAdjustments: PlanAdjustment[];
+  pendingAdjustments: AdjustmentView[];
   volume: (WeekVolume & { isCurrent: boolean })[];
   acwr: AcwrPoint[];
   acwrToday: AcwrPoint | null;
@@ -111,7 +112,9 @@ export async function getDashboard(scope: UserScope, settings: Settings, today: 
     totalWeeks: weekStarts.length || null,
     thisWeek,
     thisWeekVolume: volume.find((w) => w.isCurrent) ?? null,
-    pendingAdjustments: goal ? await scope.adjustments.listForGoal(goal.id, "proposed") : [],
+    pendingAdjustments: goal
+      ? (await scope.adjustments.listForGoal(goal.id, "proposed")).map((a) => toAdjustmentView(a, sessions))
+      : [],
     volume,
     acwr,
     acwrToday: acwr.at(-1) ?? null,

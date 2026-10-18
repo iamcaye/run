@@ -194,8 +194,13 @@ export const METRICS = {
 export const ADAPTATION = {
   compliance: { threshold: 0.7, consecutiveWeeks: 2 },
   acwr: { threshold: 1.5, nextWeekVolumeFraction: 0.85, removeQualitySessions: 1 },
-  inactivity: { gapDays: 7, stepBackWeeks: [1, 2] as Range },
-  fasterThanTarget: { minFasterFraction: 0.03, consecutiveSessions: 3 },
+  /** > gapDays without runs → step back 1 week; > twoWeeksAfterDays → 2 weeks. */
+  inactivity: { gapDays: 7, twoWeeksAfterDays: 14, stepBackWeeks: [1, 2] as Range },
+  fasterThanTarget: { minFasterFraction: 0.03, consecutiveSessions: 3, quietWeeks: 4 },
+  /** Shortest run an adjustment will scale an easy/long session down to. */
+  minScaledRunKm: 2,
+  /** A run row stuck in `running` longer than this is considered crashed and may be reclaimed. */
+  staleRunMinutes: 15,
 } as const;
 
 export const IMPORT = {

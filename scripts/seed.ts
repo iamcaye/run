@@ -2,16 +2,18 @@
  * Seeds two demo users. Re-running replaces them (matched by email).
  *
  * Seeds accounts, settings, goals, plans (started a few weeks ago) and activities imported through
- * the real Health Auto Export pipeline. A pending adjustment is added in phase 6.
+ * the real Health Auto Export pipeline, then runs the weekly adaptation (yielding a real pending
+ * adjustment for the half-marathon user).
  */
 import "dotenv/config";
 import { inArray } from "drizzle-orm";
 import { auth } from "@/server/auth/auth";
 import { closeDb, db } from "@/server/db/client";
 import { user } from "@/server/db/schema";
-import { addDays, todayInTz } from "@/lib/time";
+import { addDays, todayInTz, type IsoWeekday } from "@/lib/time";
 import { forUser, type GoalInput, type SettingsPatch } from "@/server/dal";
 import { ingestPayload } from "@/services/health-import";
+import { ensureWeeklyAdaptation } from "@/services/weekly-adaptation";
 import { createImportToken } from "@/services/import-tokens";
 import { createPlanIfMissing } from "@/services/plans";
 import { demoWorkouts, type DemoRunProfile } from "./seed-activities";
@@ -58,6 +60,8 @@ const DEMO_USERS: DemoUser[] = [
       seed: 1,
       preplanWeeks: 5,
       preplanHard: null,
+      slumpWeeks: 0,
+      slumpCompletion: 1,
     },
   },
   {
@@ -75,7 +79,7 @@ const DEMO_USERS: DemoUser[] = [
     },
     goal: {
       name: "Spring Half Marathon",
-      raceDate: "2027-03-07",
+      raceDate: "2027-02-14",
       distanceKm: 21.0975,
       goalType: "target_time",
       targetTimeSeconds: 6300, // 1:45:00
@@ -92,6 +96,9 @@ const DEMO_USERS: DemoUser[] = [
       preplanWeeks: 5,
       // A weekly tempo-ish run (HR ≥ 80% of reserve) so the prediction has a hard effort.
       preplanHard: { paceSecPerKm: 292, avgHr: 164, km: 10 },
+      // A two-week slump (e.g. a cold) → the weekly check-in proposes holding the load.
+      slumpWeeks: 2,
+      slumpCompletion: 0.25,
     },
   },
 ];
@@ -127,6 +134,7 @@ async function main() {
           today,
           timeZone: settings.timezone,
           runDays: settings.runDays,
+          weekStart: settings.weekStart as IsoWeekday,
           startWeeklyKm: demo.goal.startWeeklyKm,
           profile: demo.runs,
         }),
@@ -134,7 +142,10 @@ async function main() {
     });
     const imported = await ingestPayload(scope, token.id, payload, Buffer.byteLength(payload));
     const runs = imported.status === "ok" ? imported.summary.imported : 0;
-    console.info(`Seeded ${demo.email} (goal: ${goal.name}, ${plan?.sessions.length ?? 0} sessions, ${runs} runs imported)`);
+    // The same weekly job the cron runs, for the week that just closed.
+    const adaptation = await ensureWeeklyAdaptation(scope);
+    const proposals = adaptation?.status === "done" ? adaptation.proposals : 0;
+    console.info(`Seeded ${demo.email} (goal: ${goal.name}, ${plan?.sessions.length ?? 0} sessions, ${runs} runs imported, ${proposals} pending adjustment(s))`);
   }
   console.info(`\nDemo password for all users: ${DEMO_PASSWORD}`);
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AdjustmentCard } from "@/components/adjustments/adjustment-card";
 import { AcwrChart } from "@/components/charts/acwr-chart";
 import { LongRunChart } from "@/components/charts/long-run-chart";
 import { VolumeChart } from "@/components/charts/volume-chart";
@@ -11,6 +12,7 @@ import { PHASE_LABELS, SESSION_LABELS } from "@/lib/planning/describe";
 import { formatDistance, formatDuration, toDisplayDistance } from "@/lib/units";
 import { requireUserContext } from "@/server/context";
 import { getDashboard } from "@/services/dashboard";
+import { ensureWeeklyAdaptation } from "@/services/weekly-adaptation";
 
 export const metadata = { title: "Dashboard · Race Training" };
 
@@ -21,6 +23,8 @@ function signedDuration(seconds: number): string {
 export default async function DashboardPage() {
   const { scope, settings, today } = await requireUserContext();
   if (!settings.onboardingCompletedAt) redirect("/onboarding");
+  // On-demand fallback for the weekly job: same function and idempotency as the cron.
+  await ensureWeeklyAdaptation(scope).catch((err: unknown) => console.error("weekly adaptation failed", err));
   const d = await getDashboard(scope, settings, today);
   const units = settings.units;
 
@@ -122,11 +126,9 @@ export default async function DashboardPage() {
 
       {d.pendingAdjustments.length > 0 ? (
         <Card title="Suggested changes">
-          <ul className="flex flex-col gap-2 text-sm">
-            {d.pendingAdjustments.map((a) => (
-              <li key={a.id}>{a.reason}</li>
-            ))}
-          </ul>
+          {d.pendingAdjustments.map((a) => (
+            <AdjustmentCard key={a.id} adjustment={a} units={units} />
+          ))}
         </Card>
       ) : null}
 
