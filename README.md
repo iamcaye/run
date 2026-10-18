@@ -1,0 +1,90 @@
+# Race Training Tracker
+
+Multi-user, mobile-first web app for planning and tracking training toward race goals, with Apple Watch workouts synced via the iOS app **Health Auto Export**.
+
+See [`project.md`](./project.md) for the spec and [`docs/decisions.md`](./docs/decisions.md) for agreed deviations.
+
+> Status: **Phase 1** — scaffold, schema, auth, tenancy-enforcing data-access layer, config, seed.
+
+## Stack
+Next.js 16 (App Router) · TypeScript (strict) · Postgres + Drizzle · Better Auth · Zod · Tailwind v4 · Vitest + fast-check · Playwright
+
+## Local setup
+
+Requirements: Node 22+, pnpm 11, Docker.
+
+```bash
+pnpm install
+cp .env.example .env          # then set BETTER_AUTH_SECRET and CRON_SECRET (see below)
+pnpm db:up                    # Postgres 17 on localhost:5434 (+ run_test database)
+pnpm db:migrate
+pnpm seed                     # two demo users
+pnpm dev                      # http://localhost:3000
+```
+
+Demo accounts (password `demo-password-123`):
+
+| Email | Profile |
+|---|---|
+| `demo-10k@example.com` | 10K, beginner, finish goal |
+| `demo-half@example.com` | Half marathon, intermediate, 1:45 target |
+
+## Environment variables
+
+| Name | Required | Description |
+|---|---|---|
+| `DATABASE_URL` | yes | Postgres connection string |
+| `TEST_DATABASE_URL` | tests | Separate database for Vitest (wiped data is fine) |
+| `BETTER_AUTH_SECRET` | yes | ≥32 chars. `openssl rand -base64 32` |
+| `BETTER_AUTH_URL` | yes | Public base URL, e.g. `http://localhost:3000` |
+| `CRON_SECRET` | yes | Bearer secret for `/api/cron/adapt-plans`. `openssl rand -hex 32` |
+| `RESEND_API_KEY` | no | If set, emails go via Resend; otherwise they're printed to the server console |
+| `EMAIL_FROM` | no | Sender for outgoing email |
+
+## Database & migrations
+
+```bash
+pnpm db:generate   # after editing src/server/db/schema/*
+pnpm db:migrate    # apply migrations in ./drizzle to DATABASE_URL
+pnpm db:studio     # browse data
+```
+
+## Tests
+
+```bash
+pnpm test          # all
+pnpm test:unit     # pure domain logic (src/lib)
+pnpm test:db       # DAL / tenancy / services against TEST_DATABASE_URL (migrated automatically)
+pnpm lint && pnpm typecheck
+```
+
+`src/test/tenancy.test.ts` verifies that one user can't read, modify, delete or reference another user's data, that every user-owned table has `user_id`, and that account deletion cascades everywhere.
+
+## Password reset (dev)
+With no `RESEND_API_KEY`, the reset link is printed in the `pnpm dev` terminal.
+
+## Project layout
+
+```
+src/
+  app/           routes (auth pages, (app) protected pages, api/)
+  components/    UI
+  config/        env.ts (validated env), training.ts (ALL tunable numbers)
+  lib/           pure domain logic: planning, metrics, import (no db/next imports)
+  server/
+    db/          Drizzle client + schema
+    auth/        Better Auth instance, requireUser()
+    dal/         forUser(userId) — the only path to user data
+    email/       EmailSender (console / Resend)
+  services/      orchestration (import, weekly adaptation)
+  test/          test setup, factories, tenancy tests
+scripts/         migrate, seed (reprocess later)
+drizzle/         generated SQL migrations
+```
+
+## Deployment, cron & Health Auto Export guide
+Filled in during later phases. Note: on Vercel **Hobby** the cron runs once a day; hourly needs **Pro** or an external scheduler (e.g. a GitHub Actions workflow calling the endpoint with `CRON_SECRET`).
+
+## Roadmap (post-v1)
+- Offline quick-logging with background sync
+- Email verification
