@@ -4,7 +4,7 @@ Multi-user, mobile-first web app for planning and tracking training toward race 
 
 See [`project.md`](./project.md) for the spec and [`docs/decisions.md`](./docs/decisions.md) for agreed deviations.
 
-> Status: **Phase 3** — plan generator (`src/lib/planning`) + Plan page. Earlier: settings, goals, onboarding (2); scaffold, schema, auth, tenancy DAL, config, seed (1).
+> Status: **Phase 4** — Health Auto Export import (tokens, endpoint, mapping, matching, sync status). Earlier: plan generator + Plan page (3); settings, goals, onboarding (2); scaffold, schema, auth, tenancy DAL, config, seed (1).
 
 ## Stack
 Next.js 16 (App Router) · TypeScript (strict) · Postgres + Drizzle · Better Auth · Zod · Tailwind v4 · Vitest + fast-check · Playwright
@@ -83,7 +83,34 @@ scripts/         migrate, seed (reprocess later)
 drizzle/         generated SQL migrations
 ```
 
-## Deployment, cron & Health Auto Export guide
+## Syncing workouts from Apple Watch (Health Auto Export)
+
+1. In the app: **Settings → Apple Watch sync → Create** a token for your phone. Copy it — it's shown only once.
+2. On the iPhone, install **Health Auto Export** → *Automations* → *New automation* → **REST API**.
+3. URL: `https://<your-domain>/api/health-import`. Header: `Authorization: Bearer <token>`.
+4. Format **JSON**, data type **Workouts** only, turn on **Include route data** and **Include workout metrics**.
+5. Date range **Last 7 days** (re-sending overlapping days is safe), enable **Batch requests**, pick a sync interval.
+6. Tap *Manual export* to test; *Settings → Last sync* updates and any errors are listed below it.
+
+Only running workouts are imported. Each run is linked to the planned session on the same day (your time zone).
+Revoking a token stops that phone's automation immediately.
+
+Reprocess stored payloads after changing the mapping:
+
+```bash
+pnpm reprocess               # all users
+pnpm reprocess --user <id>   # one user
+```
+
+Test the endpoint locally:
+
+```bash
+curl -X POST http://localhost:3000/api/health-import \
+  -H "Authorization: Bearer rtt_..." -H "Content-Type: application/json" \
+  --data-binary @src/lib/import/__fixtures__/hae/provisional-v2-outdoor-run.json
+```
+
+## Deployment & cron
 Filled in during later phases. Note: on Vercel **Hobby** the cron runs once a day; hourly needs **Pro** or an external scheduler (e.g. a GitHub Actions workflow calling the endpoint with `CRON_SECRET`).
 
 ## Roadmap (post-v1)

@@ -38,10 +38,13 @@ export function activitiesRepo(d: Db, userId: string) {
       return row ?? null;
     },
 
-    /** Idempotent by (userId, externalId): re-imports overwrite metrics but keep user-entered RPE/notes. */
+    /**
+     * Idempotent by (userId, externalId): re-imports overwrite metrics but keep user-entered
+     * RPE/notes and an existing planned-session link.
+     */
     async upsert(input: ActivityInput): Promise<Activity> {
       await checkRefs(input);
-      const { rpe: _rpe, notes: _notes, ...imported } = input;
+      const { rpe: _rpe, notes: _notes, plannedSessionId: _link, ...imported } = input;
       const [row] = await d
         .insert(activity)
         .values({ ...input, userId })

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { goalToFormDefaults } from "@/components/goals/goal-defaults";
 import { emptyGoalDefaults, GoalForm } from "@/components/goals/goal-form";
 import { GoalFacts } from "@/components/goals/goal-summary";
+import { ImportSection } from "@/components/import/import-section";
 import { SettingsStep } from "@/components/onboarding/settings-step";
 import { PlanOverview } from "@/components/plan/plan-overview";
 import { summarizeWarnings } from "@/lib/planning/describe";
@@ -127,12 +128,11 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
 
       {step === "import" ? (
         <Card>
-          {/* Phase 4: create an import token + copyable Health Auto Export setup guide. */}
           <p className="text-sm">
-            Workouts sync from your Apple Watch via the <strong>Health Auto Export</strong> iOS app. Setup
-            (an import token and the app configuration) will appear here. You can also do it later from
-            Settings.
+            Workouts sync from your Apple Watch via the <strong>Health Auto Export</strong> iOS app. Create a
+            token for your phone, then follow the guide. You can also do this later in Settings.
           </p>
+          <ImportSection scope={scope} showStatus={false} />
           <form action={finishOnboardingAction}>
             <SubmitButton pendingLabel="Finishing…">Go to my dashboard</SubmitButton>
           </form>

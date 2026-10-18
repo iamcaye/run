@@ -1,0 +1,30 @@
+{
+  "data": {
+    "workouts": [
+      {
+        "id": "8F2C5B1E-6A3D-4E7B-9C1A-2D4F6B8E0A13",
+        "name": "Outdoor Run",
+        "start": "2026-10-18 08:02:11 +0200",
+        "end": "2026-10-18 08:49:41 +0200",
+        "duration": 2790,
+        "distance": { "qty": 8.12, "units": "km" },
+        "activeEnergyBurned": { "qty": 612.4, "units": "kcal" },
+        "avgHeartRate": { "qty": 148.6, "units": "bpm" },
+        "maxHeartRate": { "qty": 171, "units": "bpm" },
+        "elevationUp": { "qty": 42.1, "units": "m" },
+        "heartRateData": [
+          { "date": "2026-10-18 08:02:11 +0200", "Min": 96, "Avg": 101, "Max": 106, "units": "count/min", "source": "Apple Watch" },
+          { "date": "2026-10-18 08:12:11 +0200", "Min": 140, "Avg": 144, "Max": 149, "units": "count/min", "source": "Apple Watch" },
+          { "date": "2026-10-18 08:32:11 +0200", "Min": 150, "Avg": 156, "Max": 161, "units": "count/min", "source": "Apple Watch" },
+          { "date": "2026-10-18 08:47:11 +0200", "Min": 160, "Avg": 167, "Max": 171, "units": "count/min", "source": "Apple Watch" }
+        ],
+        "route": [
+          { "lat": 39.46975, "lon": -0.37739, "altitude": 15.2, "timestamp": "2026-10-18 08:02:11 +0200", "speed": 0.0, "course": 0.0 },
+          { "lat": 39.47021, "lon": -0.37698, "altitude": 15.6, "timestamp": "2026-10-18 08:02:31 +0200", "speed": 2.9, "course": 32.1 },
+          { "lat": 39.47088, "lon": -0.37641, "altitude": 16.1, "timestamp": "2026-10-18 08:02:59 +0200", "speed": 3.0, "course": 35.4 },
+          { "lat": 39.47152, "lon": -0.37577, "altitude": 16.4, "timestamp": "2026-10-18 08:03:27 +0200", "speed": 3.1, "course": 38.0 }
+        ]
+      }
+    ]
+  }
+}
