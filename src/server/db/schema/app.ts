@@ -93,6 +93,7 @@ export const userSettings = pgTable(
     maxRunsPerWeek: smallint("max_runs_per_week").notNull().default(4),
     maxHr: smallint("max_hr"),
     restHr: smallint("rest_hr"),
+    onboardingCompletedAt: timestamp("onboarding_completed_at", { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

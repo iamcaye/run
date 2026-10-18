@@ -1,0 +1,118 @@
+import Link from "next/link";
+import { z } from "zod";
+import { goalToFormDefaults } from "@/components/goals/goal-defaults";
+import { emptyGoalDefaults, GoalForm } from "@/components/goals/goal-form";
+import { GoalFacts } from "@/components/goals/goal-summary";
+import { SettingsStep } from "@/components/onboarding/settings-step";
+import { Card, SubmitButton } from "@/components/ui/form";
+import { addDays } from "@/lib/time";
+import { createGoalAction, updateGoalAction } from "@/server/actions/goals";
+import { finishOnboardingAction } from "@/server/actions/onboarding";
+import { requireUserContext } from "@/server/context";
+
+export const metadata = { title: "Get started · Race Training" };
+
+const STEPS = [
+  { key: "settings", label: "Your week" },
+  { key: "goal", label: "First goal" },
+  { key: "plan", label: "Plan preview" },
+  { key: "import", label: "Apple Watch sync" },
+] as const;
+
+const Step = z.enum(STEPS.map((s) => s.key)).catch("settings");
+
+export default async function OnboardingPage({ searchParams }: PageProps<"/onboarding">) {
+  const step = Step.parse((await searchParams).step);
+  const { scope, settings, today } = await requireUserContext();
+  const active = await scope.goals.getActive();
+  const index = STEPS.findIndex((s) => s.key === step);
+
+  return (
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-5">
+      <div>
+        <p className="text-sm text-muted">
+          Step {index + 2} of {STEPS.length + 1} · account created ✓
+        </p>
+        <h1 className="text-xl font-semibold">{STEPS[index]?.label}</h1>
+      </div>
+      <ol className="flex gap-1" aria-label="Progress">
+        {STEPS.map((s, i) => (
+          <li key={s.key} className={`h-1.5 flex-1 rounded-full ${i <= index ? "bg-accent" : "bg-border"}`}>
+            <span className="sr-only">
+              {s.label}
+              {i < index ? " (done)" : i === index ? " (current)" : ""}
+            </span>
+          </li>
+        ))}
+      </ol>
+
+      {step === "settings" ? (
+        <Card>
+          <p className="text-sm text-muted">Tell us when you can run. You can change this any time in Settings.</p>
+          <SettingsStep settings={settings} />
+        </Card>
+      ) : null}
+
+      {step === "goal" ? (
+        <Card>
+          {active ? (
+            <>
+              <p className="text-sm text-muted">You already have an active goal — adjust it or continue.</p>
+              <GoalForm
+                action={updateGoalAction.bind(null, active.id)}
+                defaults={goalToFormDefaults(active, settings.units)}
+                units={settings.units}
+                submitLabel="Save"
+              />
+              <Link href="/onboarding?step=plan" className="self-start text-sm font-medium text-accent">
+                Continue →
+              </Link>
+            </>
+          ) : (
+            <GoalForm
+              action={createGoalAction}
+              defaults={emptyGoalDefaults}
+              units={settings.units}
+              minDate={addDays(today, 1)}
+              submitLabel="Create goal & continue"
+              redirectTo="/onboarding?step=plan"
+            />
+          )}
+        </Card>
+      ) : null}
+
+      {step === "plan" ? (
+        <Card>
+          {active ? <GoalFacts goal={active} units={settings.units} today={today} /> : null}
+          {/* Phase 3: generated plan preview + warnings (e.g. compressed plan). */}
+          <p className="text-sm">
+            Your plan preview will appear here: weekly volume, phases and any warnings (for example if
+            there&apos;s less time than ideal before race day).
+          </p>
+          <div className="flex gap-3">
+            <Link href="/onboarding?step=goal" className="text-sm text-muted">
+              ← Back
+            </Link>
+            <Link href="/onboarding?step=import" className="text-sm font-medium text-accent">
+              Continue →
+            </Link>
+          </div>
+        </Card>
+      ) : null}
+
+      {step === "import" ? (
+        <Card>
+          {/* Phase 4: create an import token + copyable Health Auto Export setup guide. */}
+          <p className="text-sm">
+            Workouts sync from your Apple Watch via the <strong>Health Auto Export</strong> iOS app. Setup
+            (an import token and the app configuration) will appear here. You can also do it later from
+            Settings.
+          </p>
+          <form action={finishOnboardingAction}>
+            <SubmitButton pendingLabel="Finishing…">Go to my dashboard</SubmitButton>
+          </form>
+        </Card>
+      ) : null}
+    </div>
+  );
+}

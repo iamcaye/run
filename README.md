@@ -4,7 +4,7 @@ Multi-user, mobile-first web app for planning and tracking training toward race 
 
 See [`project.md`](./project.md) for the spec and [`docs/decisions.md`](./docs/decisions.md) for agreed deviations.
 
-> Status: **Phase 1** — scaffold, schema, auth, tenancy-enforcing data-access layer, config, seed.
+> Status: **Phase 2** — settings, goals CRUD, onboarding skeleton (on top of Phase 1: scaffold, schema, auth, tenancy DAL, config, seed).
 
 ## Stack
 Next.js 16 (App Router) · TypeScript (strict) · Postgres + Drizzle · Better Auth · Zod · Tailwind v4 · Vitest + fast-check · Playwright
