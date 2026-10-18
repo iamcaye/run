@@ -23,7 +23,7 @@ export default function SignUpPage() {
     });
     setPending(false);
     if (error) return setError(error.message ?? "Could not create account");
-    router.replace("/dashboard");
+    router.replace("/onboarding");
     router.refresh();
   }
 

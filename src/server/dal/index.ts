@@ -6,6 +6,7 @@ import { activitiesRepo } from "./activities";
 import { adjustmentsRepo } from "./adjustments";
 import { goalsRepo } from "./goals";
 import { importTokensRepo, rawImportsRepo } from "./imports";
+import { profileRepo } from "./profile";
 import { sessionsRepo } from "./sessions";
 import { settingsRepo } from "./settings";
 
@@ -20,6 +21,7 @@ export function forUser(userId: string, database: Db = db()) {
   if (!userId) throw new Error("forUser() requires a userId");
   return {
     userId,
+    profile: profileRepo(database, userId),
     settings: settingsRepo(database, userId),
     goals: goalsRepo(database, userId),
     sessions: sessionsRepo(database, userId),

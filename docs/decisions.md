@@ -43,5 +43,15 @@ Agreed before Phase 1 (2026-10-18).
 ## PWA
 - v1: installable with an app-shell cache and a friendly offline state. Offline quick-logging is v2.
 
+## Goals & onboarding (Phase 2)
+- A user's first goal becomes active automatically; later goals are `upcoming` unless "Make active" is ticked.
+- When the active goal is completed, abandoned or deleted, the soonest *future* upcoming goal is promoted automatically (none → no active goal; the dashboard offers to create one).
+- `upcoming` and `abandoned` goals can be (re)activated; `completed` cannot.
+- A result can be logged from race day onwards; the "log your result" prompt shows from the day after.
+- Goal edits that change date/distance/type/target/start volume/level, and availability or week-start changes, return `planAffected`; the UI shows a notice. The actual "regenerate future sessions" action is wired in Phase 3.
+- Onboarding completion is tracked in `user_settings.onboarding_completed_at`; `/dashboard` redirects to `/onboarding` until it's set. The onboarding settings step pre-selects the browser's time zone.
+- Forms submit via `useFormAction` (onSubmit + transition) rather than `<form action>`, so React doesn't reset fields on validation errors.
+- Display name lives in Better Auth's `user.name`; account deletion uses Better Auth's `deleteUser` (password required).
+
 ## Fixtures
 - Health Auto Export fixtures are provisional (`src/lib/import/__fixtures__/hae/provisional-*.json`) until a real anonymized payload arrives.

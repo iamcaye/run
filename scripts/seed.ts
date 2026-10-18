@@ -84,7 +84,7 @@ async function main() {
       body: { name: demo.name, email: demo.email, password: DEMO_PASSWORD },
     });
     const scope = forUser(created.id);
-    await scope.settings.update(demo.settings);
+    await scope.settings.update({ ...demo.settings, onboardingCompletedAt: new Date() });
     const goal = await scope.goals.create(demo.goal);
     await scope.goals.activate(goal.id);
     console.info(`Seeded ${demo.email} (goal: ${goal.name})`);
