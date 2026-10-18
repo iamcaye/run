@@ -17,6 +17,8 @@ export default defineConfig({
           name: "unit",
           include: ["src/lib/**/*.test.ts", "src/config/**/*.test.ts"],
           environment: "node",
+          // Property tests with FC_RUNS raised can take a while.
+          testTimeout: 120_000,
         },
       },
       {

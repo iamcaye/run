@@ -1,0 +1,24 @@
+{
+  "data": {
+    "metrics": [],
+    "workouts": [
+      {
+        "name": "Running",
+        "start": "2026-10-11T07:30:00Z",
+        "end": "2026-10-11T08:31:10Z",
+        "distance": 6.2,
+        "distanceUnits": "mi",
+        "heartRate": { "avg": { "qty": 152 }, "max": { "qty": 178 }, "min": { "qty": 98 } },
+        "heartRateData": [
+          { "date": "2026-10-11T07:30:00Z", "qty": 110 },
+          { "date": "2026-10-11T08:00:00Z", "qty": 155 }
+        ],
+        "route": [
+          { "latitude": 51.5074, "longitude": -0.1278, "elevation": 11, "timestamp": "2026-10-11T07:30:00Z" },
+          { "latitude": 51.5079, "longitude": -0.1269, "elevation": 12, "timestamp": "2026-10-11T07:30:15Z" },
+          { "latitude": 999, "longitude": 0, "timestamp": "2026-10-11T07:30:30Z" }
+        ]
+      }
+    ]
+  }
+}

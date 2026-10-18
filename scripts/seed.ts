@@ -1,15 +1,20 @@
 /**
  * Seeds two demo users. Re-running replaces them (matched by email).
  *
- * Phase 1 seeds accounts, settings and goals. Plans (phase 3), activities (phase 4) and a pending
- * adjustment (phase 6) are added here as those features land.
+ * Seeds accounts, settings, goals, plans (started a few weeks ago) and activities imported through
+ * the real Health Auto Export pipeline. A pending adjustment is added in phase 6.
  */
 import "dotenv/config";
 import { inArray } from "drizzle-orm";
 import { auth } from "@/server/auth/auth";
 import { closeDb, db } from "@/server/db/client";
 import { user } from "@/server/db/schema";
+import { addDays, todayInTz } from "@/lib/time";
 import { forUser, type GoalInput, type SettingsPatch } from "@/server/dal";
+import { ingestPayload } from "@/services/health-import";
+import { createImportToken } from "@/services/import-tokens";
+import { createPlanIfMissing } from "@/services/plans";
+import { demoWorkouts } from "./seed-activities";
 
 export const DEMO_PASSWORD = "demo-password-123";
 
@@ -18,6 +23,9 @@ type DemoUser = {
   email: string;
   settings: SettingsPatch;
   goal: GoalInput;
+  /** The plan started this many days ago. */
+  planStartedDaysAgo: number;
+  runs: { center: { lat: number; lon: number }; easyPace: number; completion: number; seed: number };
 };
 
 const DEMO_USERS: DemoUser[] = [
@@ -42,6 +50,8 @@ const DEMO_USERS: DemoUser[] = [
       level: "beginner",
       notes: "First 10K — just finish strong.",
     },
+    planStartedDaysAgo: 8,
+    runs: { center: { lat: 40.4168, lon: -3.7038 }, easyPace: 400, completion: 0.85, seed: 1 },
   },
   {
     name: "Marco (Half intermediate)",
@@ -66,6 +76,8 @@ const DEMO_USERS: DemoUser[] = [
       level: "intermediate",
       notes: null,
     },
+    planStartedDaysAgo: 22,
+    runs: { center: { lat: 41.9028, lon: 12.4964 }, easyPace: 360, completion: 0.9, seed: 2 },
   },
 ];
 
@@ -86,8 +98,19 @@ async function main() {
     const scope = forUser(created.id);
     await scope.settings.update({ ...demo.settings, onboardingCompletedAt: new Date() });
     const goal = await scope.goals.create(demo.goal);
-    await scope.goals.activate(goal.id);
-    console.info(`Seeded ${demo.email} (goal: ${goal.name})`);
+    const active = await scope.goals.activate(goal.id);
+    if (!active) throw new Error("activate failed");
+    const settings = await scope.settings.get();
+    const today = todayInTz(settings.timezone);
+    const plan = await createPlanIfMissing(scope, active, settings, today, addDays(today, -demo.planStartedDaysAgo));
+    const sessions = await scope.sessions.listForGoal(active.id);
+    const { summary: token } = await createImportToken(scope, "Demo iPhone");
+    const payload = JSON.stringify({
+      data: { workouts: demoWorkouts({ sessions, today, timeZone: settings.timezone, ...demo.runs }) },
+    });
+    const imported = await ingestPayload(scope, token.id, payload, Buffer.byteLength(payload));
+    const runs = imported.status === "ok" ? imported.summary.imported : 0;
+    console.info(`Seeded ${demo.email} (goal: ${goal.name}, ${plan?.sessions.length ?? 0} sessions, ${runs} runs imported)`);
   }
   console.info(`\nDemo password for all users: ${DEMO_PASSWORD}`);
 }

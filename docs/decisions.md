@@ -53,5 +53,29 @@ Agreed before Phase 1 (2026-10-18).
 - Forms submit via `useFormAction` (onSubmit + transition) rather than `<form action>`, so React doesn't reset fields on validation errors.
 - Display name lives in Better Auth's `user.name`; account deletion uses Better Auth's `deleteUser` (password required).
 
+## Plan generator (Phase 3)
+- `generatePlan` returns `{ sessions, weeks, warnings, peakKm, deleteIds }` instead of a bare array: week summaries carry the volume targets the 10% invariant is checked against; warnings are typed codes rendered by `lib/planning/describe.ts`.
+- Race week is exempt from the +10% rule (a marathon alone exceeds 50% of peak). Progression rounds *down* to 0.5 km so rounding never breaks the rule. Week-1 volume has a floor (`minStartWeeklyKm`, 8 km) so tiny starting volumes can progress.
+- Maintenance weeks (lead time > 20 weeks) hold the starting volume flat.
+- Long-run share: 35% for half/marathon; 5K/10K 35/30/25% for ≤3/4/≥5 runs. Long ≤ cap and ≤ +2 km over the longest long run so far. Easy runs never exceed 85% of the week's long run (excess volume is left out rather than piled onto easy days).
+- A partial first week with ≤2 usable days gets easy runs only. Race-week shakeouts may be 2 km.
+- Spacing rules hold across week boundaries: all long-run dates (and the race date) are fixed before quality days are placed.
+- Regeneration builds *around* kept (past / user-edited / completed) sessions: they occupy their day, consume run slots and weekly km, satisfy a matching quality/long slot, and anchor the spacing rules. Long-run share and quality sizes still come from the full week's target. The curve keeps the plan's original start date so week numbering is stable.
+- A plan is generated when a goal becomes active (created as first goal, switched to, or promoted) and it has no sessions yet. Upcoming goals have no plan.
+- Plan warnings shown on the Plan page are recomputed from the plan's start date (generation is deterministic).
+- Editing a session (date, type, distance, notes) sets `isUserEdited`; changing the type clears its structure and re-derives the target pace. Two sessions can't share a day.
+
+## Health Auto Export import (Phase 4)
+- Tokens: `rtt_` + 32 random bytes (base64url); only the SHA-256 is stored. `server/system/import-tokens.ts` is the single cross-tenant lookup (token → user); everything after that runs through `forUser(userId)`.
+- Order of checks: token (401) → per-token rate limit, 30 req / 10 min, Postgres fixed window (429 + `Retry-After`) → size (413 by `Content-Length` or actual body > 4 MB, recorded in `raw_import` with `payloadBytes` and no payload) → store raw → process.
+- "Persist before parsing": the body must be JSON to fit a jsonb column; invalid JSON is recorded as a failed raw import without payload (400). Any JSON is stored as received before workouts are mapped; an unexpected envelope is stored and marked failed (400).
+- Per-workout tolerance: non-runs are skipped; unreadable runs are reported in the response and in `raw_import.error` while the rest import (status `processed`). Zero readable runs → `failed`. Settings' "recent import errors" shows both.
+- `mapWorkout` reads both current (`{qty, units}`, `lat/lon`) and legacy (plain numbers + `distanceUnits`, `latitude/longitude`, `heartRate.avg`) fields; duration prefers `duration` (excludes pauses) over end − start; a missing id falls back to a hash of name + start so re-sends stay idempotent. Dates without an offset are read in the user's time zone.
+- Re-imports keep user-entered RPE/notes and an existing session link; a re-send without a route never wipes a stored route.
+- Matching only links to sessions of the **active** goal, skips rest days and sessions already claimed by another activity (one activity per session).
+- Requests are processed synchronously; the response includes counts (`imported`, `skipped`, `invalid`, `matched`).
+- `pnpm reprocess [--user <id>]` re-runs stored payloads oldest-first (idempotent).
+- The seed builds HAE-format payloads for past planned sessions and sends them through the real pipeline.
+
 ## Fixtures
 - Health Auto Export fixtures are provisional (`src/lib/import/__fixtures__/hae/provisional-*.json`) until a real anonymized payload arrives.

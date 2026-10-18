@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gte } from "drizzle-orm";
 import type { Db } from "@/server/db/client";
 import { activity, routePoint } from "@/server/db/schema";
 import { assertOwnsRawImport, assertOwnsSession } from "./ownership";
@@ -24,15 +24,27 @@ export function activitiesRepo(d: Db, userId: string) {
         .offset(offset);
     },
 
+    /** Activities that started at or after `since`, oldest first. */
+    since(since: Date): Promise<Activity[]> {
+      return d
+        .select()
+        .from(activity)
+        .where(and(eq(activity.userId, userId), gte(activity.startAt, since)))
+        .orderBy(asc(activity.startAt));
+    },
+
     async get(id: string): Promise<Activity | null> {
       const [row] = await d.select().from(activity).where(owned(id));
       return row ?? null;
     },
 
-    /** Idempotent by (userId, externalId): re-imports overwrite metrics but keep user-entered RPE/notes. */
+    /**
+     * Idempotent by (userId, externalId): re-imports overwrite metrics but keep user-entered
+     * RPE/notes and an existing planned-session link.
+     */
     async upsert(input: ActivityInput): Promise<Activity> {
       await checkRefs(input);
-      const { rpe: _rpe, notes: _notes, ...imported } = input;
+      const { rpe: _rpe, notes: _notes, plannedSessionId: _link, ...imported } = input;
       const [row] = await d
         .insert(activity)
         .values({ ...input, userId })

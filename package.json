@@ -15,7 +15,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:studio": "drizzle-kit studio",
-    "seed": "tsx --conditions=react-server scripts/seed.ts"
+    "seed": "tsx --conditions=react-server scripts/seed.ts",
+    "reprocess": "tsx --conditions=react-server scripts/reprocess.ts"
   },
   "dependencies": {
     "@date-fns/tz": "1.5.0",

@@ -3,7 +3,11 @@ import { z } from "zod";
 import { goalToFormDefaults } from "@/components/goals/goal-defaults";
 import { emptyGoalDefaults, GoalForm } from "@/components/goals/goal-form";
 import { GoalFacts } from "@/components/goals/goal-summary";
+import { ImportSection } from "@/components/import/import-section";
 import { SettingsStep } from "@/components/onboarding/settings-step";
+import { PlanOverview } from "@/components/plan/plan-overview";
+import { summarizeWarnings } from "@/lib/planning/describe";
+import { planInsights } from "@/services/plans";
 import { Card, SubmitButton } from "@/components/ui/form";
 import { addDays } from "@/lib/time";
 import { createGoalAction, updateGoalAction } from "@/server/actions/goals";
@@ -26,6 +30,10 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
   const { scope, settings, today } = await requireUserContext();
   const active = await scope.goals.getActive();
   const index = STEPS.findIndex((s) => s.key === step);
+  const preview =
+    step === "plan" && active
+      ? await planInsights(scope, active, settings, today, (await scope.sessions.listForGoal(active.id))[0]?.date)
+      : null;
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-5">
@@ -84,11 +92,29 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
       {step === "plan" ? (
         <Card>
           {active ? <GoalFacts goal={active} units={settings.units} today={today} /> : null}
-          {/* Phase 3: generated plan preview + warnings (e.g. compressed plan). */}
-          <p className="text-sm">
-            Your plan preview will appear here: weekly volume, phases and any warnings (for example if
-            there&apos;s less time than ideal before race day).
-          </p>
+          {preview ? (
+            <>
+              <PlanOverview
+                units={settings.units}
+                weeks={preview.weeks.map((w) => ({
+                  index: w.index,
+                  phase: w.phase,
+                  km: preview.sessions.filter((s) => s.weekIndex === w.index).reduce((a, s) => a + s.targetKm, 0),
+                }))}
+              />
+              <p className="text-sm">
+                {preview.weeks.length} weeks · {preview.sessions.length} sessions. Volume grows by at most 10% a
+                week, with an easier week every fourth week.
+              </p>
+              {summarizeWarnings(preview.warnings).map((w) => (
+                <p key={w} className="rounded-lg border border-border p-3 text-sm text-muted">
+                  {w}
+                </p>
+              ))}
+            </>
+          ) : (
+            <p className="text-sm">Create a goal first to see your plan.</p>
+          )}
           <div className="flex gap-3">
             <Link href="/onboarding?step=goal" className="text-sm text-muted">
               ← Back
@@ -102,12 +128,11 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
 
       {step === "import" ? (
         <Card>
-          {/* Phase 4: create an import token + copyable Health Auto Export setup guide. */}
           <p className="text-sm">
-            Workouts sync from your Apple Watch via the <strong>Health Auto Export</strong> iOS app. Setup
-            (an import token and the app configuration) will appear here. You can also do it later from
-            Settings.
+            Workouts sync from your Apple Watch via the <strong>Health Auto Export</strong> iOS app. Create a
+            token for your phone, then follow the guide. You can also do this later in Settings.
           </p>
+          <ImportSection scope={scope} showStatus={false} />
           <form action={finishOnboardingAction}>
             <SubmitButton pendingLabel="Finishing…">Go to my dashboard</SubmitButton>
           </form>

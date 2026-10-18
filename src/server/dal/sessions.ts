@@ -1,7 +1,7 @@
 import "server-only";
-import { and, asc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lte } from "drizzle-orm";
 import type { Db } from "@/server/db/client";
-import { plannedSession } from "@/server/db/schema";
+import { activity, plannedSession } from "@/server/db/schema";
 import { assertOwnsGoal } from "./ownership";
 import type { PlannedSession, PlannedSessionInput, PlannedSessionPatch } from "./types";
 
@@ -40,6 +40,41 @@ export function sessionsRepo(d: Db, userId: string) {
         .insert(plannedSession)
         .values(inputs.map((i) => ({ ...i, goalId, userId })))
         .returning();
+    },
+
+    /** Session ids of this goal that have a completed activity linked. */
+    async linkedSessionIds(goalId: string): Promise<Set<string>> {
+      const rows = await d
+        .selectDistinct({ id: activity.plannedSessionId })
+        .from(activity)
+        .innerJoin(plannedSession, eq(plannedSession.id, activity.plannedSessionId))
+        .where(and(eq(activity.userId, userId), eq(plannedSession.goalId, goalId)));
+      return new Set(rows.map((r) => r.id).filter((id): id is string => id !== null));
+    },
+
+    /** Atomically deletes `deleteIds` (of this goal) and inserts `inserts`. */
+    async replace(
+      goalId: string,
+      deleteIds: readonly string[],
+      inserts: Omit<PlannedSessionInput, "goalId">[],
+    ): Promise<void> {
+      await assertOwnsGoal(d, userId, goalId);
+      await d.transaction(async (tx) => {
+        if (deleteIds.length > 0) {
+          await tx
+            .delete(plannedSession)
+            .where(
+              and(
+                eq(plannedSession.userId, userId),
+                eq(plannedSession.goalId, goalId),
+                inArray(plannedSession.id, [...deleteIds]),
+              ),
+            );
+        }
+        if (inserts.length > 0) {
+          await tx.insert(plannedSession).values(inserts.map((i) => ({ ...i, goalId, userId })));
+        }
+      });
     },
 
     async update(id: string, patch: PlannedSessionPatch): Promise<PlannedSession | null> {

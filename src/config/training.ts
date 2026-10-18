@@ -67,17 +67,56 @@ export const PLANNING = {
   /** 3 up + 1 deload. */
   deload: { cycleLength: 4, fraction: 0.78 },
 
+  /** Week-1 volume floor so very low starting volumes can still progress in 10% steps. */
+  minStartWeeklyKm: 8,
+
   longRun: {
     shareOfWeek: [0.25, 0.35] as Range,
+    /** 5K/10K share by number of runs that week: ≤3 runs → 35%, 4 → 30%, ≥5 → 25%. */
+    shareByRuns: { upTo3: 0.35, four: 0.3, fivePlus: 0.25 },
+    /** Half/marathon always use the top of the range — the long run is the key session. */
+    shareLongDistances: 0.35,
+    /** A partial first week with this few usable days gets easy runs only. */
+    skipInPartialWeekWithDays: 2,
     maxIncreaseKmPerWeek: 2,
     capKm: { "5k": 10, "10k": 14, half: 20, marathon: 32 } satisfies PerDistance<number>,
+    /** In `specific` weeks the long run (half/marathon) ends with this share at race pace. */
+    racePaceFinishShare: 0.3,
   },
 
   /** Max quality sessions per week by level (beginners: at most 1). */
   maxQualityPerWeek: { beginner: 1, intermediate: 2, advanced: 2 } satisfies PerLevel<number>,
 
+  /** Fixed structure of quality sessions: warmup + main set + cooldown (km). */
+  quality: {
+    warmupKm: 2,
+    cooldownKm: 1.5,
+    tempo: { shareOfWeek: 0.1, minKm: 2, maxKm: 10 },
+    racePace: {
+      shareOfWeek: 0.12,
+      minKm: 2,
+      maxKm: { "5k": 4, "10k": 6, half: 12, marathon: 16 } satisfies PerDistance<number>,
+    },
+    intervals: {
+      repKm: { "5k": 0.4, "10k": 1, half: 1, marathon: 1.6 } satisfies PerDistance<number>,
+      shareOfWeek: 0.08,
+      minReps: 4,
+      maxReps: 10,
+      recoverySeconds: 90,
+      /** Jog distance per recovery, counted in the session total. */
+      recoveryKm: 0.2,
+    },
+    taperMainSetFraction: 0.7,
+  },
+
+  strides: { reps: 6, repSeconds: 20, recoverySeconds: 60 },
+
   roundingKm: 0.5,
   minEasyRunKm: 3,
+  /** Easy runs never exceed this fraction of the week's long run (excess volume is left out). */
+  maxEasyFractionOfLong: 0.85,
+  /** Race-week shakeouts may be shorter than a normal easy run. */
+  raceWeekShakeoutMinKm: 2,
 } as const;
 
 /** Pace offsets in seconds/km relative to race pace (RP). */
@@ -88,6 +127,21 @@ export const PACES = {
   /** Tempo/threshold ≈ equivalent pace between these two distances (km). */
   tempoEquivalentKm: [15, 10] as Range,
   intervalsEquivalentKm: 5,
+  /** Finish goals: estimate paces from recent runs at least this long, within this many days. */
+  estimateFromActivities: { minKm: 3, lookbackDays: 42 },
+} as const;
+
+/** RPE-based guidance used on every session (and instead of paces for finish goals). */
+export const EFFORT_DESCRIPTIONS = {
+  easy: "Easy, conversational — RPE 3–4",
+  long: "Steady and relaxed; you could still talk in sentences — RPE 4–5",
+  long_race_pace_finish: "Relaxed, then the last part at goal race effort — RPE 4–5, finishing at 6–7",
+  tempo: "Comfortably hard; a few words at a time — RPE 6–7",
+  intervals: "Hard but controlled, even reps — RPE 8",
+  race_pace: "Goal race effort — RPE 6–7 (5K/10K: 7–8)",
+  strides: "Easy run with short relaxed accelerations — RPE 3–4, strides at 7",
+  race: "Race day — trust your training",
+  rest: "Rest",
 } as const;
 
 export const SESSION_TYPES = [

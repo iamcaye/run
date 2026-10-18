@@ -9,6 +9,11 @@
   --accent: #ea580c;
   --accent-foreground: #ffffff;
   --danger: #dc2626;
+  --phase-base: #93c5fd;
+  --phase-build: #fbbf24;
+  --phase-specific: #f97316;
+  --phase-taper: #a7f3d0;
+  --phase-race: #dc2626;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -21,6 +26,11 @@
     --accent: #fb923c;
     --accent-foreground: #1c1917;
     --danger: #f87171;
+    --phase-base: #1d4ed8;
+    --phase-build: #b45309;
+    --phase-specific: #ea580c;
+    --phase-taper: #047857;
+    --phase-race: #f87171;
   }
 }
 
@@ -33,6 +43,11 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-danger: var(--danger);
+  --color-phase-base: var(--phase-base);
+  --color-phase-build: var(--phase-build);
+  --color-phase-specific: var(--phase-specific);
+  --color-phase-taper: var(--phase-taper);
+  --color-phase-race: var(--phase-race);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

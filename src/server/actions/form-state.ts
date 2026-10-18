@@ -7,6 +7,8 @@ export type FormState = {
   fieldErrors?: Record<string, string[] | undefined>;
   /** Set when the change should offer to regenerate future plan sessions. */
   planAffected?: boolean;
+  /** A value shown to the user exactly once (e.g. a new import token). */
+  secret?: string;
 };
 
 export const idle: FormState = { status: "idle" };

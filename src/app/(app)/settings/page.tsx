@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/form";
+import { ImportSection } from "@/components/import/import-section";
 import { DeleteAccount } from "@/components/settings/delete-account";
 import {
   AvailabilityForm,
@@ -11,7 +12,7 @@ import { requireUserContext } from "@/server/context";
 export const metadata = { title: "Settings · Race Training" };
 
 export default async function SettingsPage() {
-  const { user, settings } = await requireUserContext();
+  const { user, settings, scope } = await requireUserContext();
 
   return (
     <div className="flex flex-col gap-4">
@@ -33,8 +34,8 @@ export default async function SettingsPage() {
       <Card title="Heart rate">
         <HeartRateForm maxHr={settings.maxHr} restHr={settings.restHr} />
       </Card>
-      <Card title="Health Auto Export">
-        <p className="text-sm text-muted">Import tokens and sync status arrive in the next phase.</p>
+      <Card title="Apple Watch sync (Health Auto Export)">
+        <ImportSection scope={scope} />
       </Card>
       <Card title="Danger zone">
         <DeleteAccount />
