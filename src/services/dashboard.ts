@@ -112,8 +112,11 @@ export async function getDashboard(scope: UserScope, settings: Settings, today: 
     totalWeeks: weekStarts.length || null,
     thisWeek,
     thisWeekVolume: volume.find((w) => w.isCurrent) ?? null,
+    // Pending proposals, plus ones decided in the last day so the outcome stays visible.
     pendingAdjustments: goal
-      ? (await scope.adjustments.listForGoal(goal.id, "proposed")).map((a) => toAdjustmentView(a, sessions))
+      ? (await scope.adjustments.listForGoal(goal.id))
+          .filter((a) => a.status === "proposed" || (a.status !== "superseded" && a.decidedAt && Date.now() - a.decidedAt.getTime() < 86_400_000))
+          .map((a) => toAdjustmentView(a, sessions))
       : [],
     volume,
     acwr,

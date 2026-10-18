@@ -1,10 +1,8 @@
 import "server-only";
-import { TZDate } from "@date-fns/tz";
-import { format } from "date-fns";
 import { mapWorkout, type MappedWorkout } from "@/lib/import/map-workout";
-import { matchSession } from "@/lib/import/match";
 import { HaePayloadSchema } from "@/lib/import/schema";
 import type { UserScope } from "@/server/dal";
+import { linkToPlannedSession } from "./activity-linking";
 
 export type ImportSummary = {
   rawImportId: string;
@@ -123,19 +121,7 @@ async function saveWorkout(
       w.route.map((p, idx) => ({ idx, lat: p.lat, lon: p.lon, altitude: p.altitude, timestamp: p.timestamp })),
     );
   }
-  if (activity.plannedSessionId) return { matched: true };
-
-  const goal = await scope.goals.getActive();
-  if (!goal) return { matched: false };
-  const localDate = format(new TZDate(w.startAt, timeZone), "yyyy-MM-dd");
-  const [sessions, claimed] = await Promise.all([
-    scope.sessions.listForGoal(goal.id, { from: localDate, to: localDate }),
-    scope.sessions.linkedSessionIds(goal.id),
-  ]);
-  const sessionId = matchSession({ localDate, km: w.km }, sessions, claimed);
-  if (!sessionId) return { matched: false };
-  await scope.activities.update(activity.id, { plannedSessionId: sessionId });
-  return { matched: true };
+  return { matched: await linkToPlannedSession(scope, activity, timeZone) };
 }
 
 /** Re-runs every stored payload of a user, oldest first. */

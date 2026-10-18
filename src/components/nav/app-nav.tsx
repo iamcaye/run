@@ -3,31 +3,38 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// Log and Activities join as their phases land.
+// Five tabs fit a phone's bottom bar; Goals is in the desktop nav and linked from the dashboard.
 const LINKS = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/plan", label: "Plan" },
-  { href: "/goals", label: "Goals" },
-  { href: "/settings", label: "Settings" },
+  { href: "/dashboard", label: "Dashboard", mobile: true },
+  { href: "/plan", label: "Plan", mobile: true },
+  { href: "/log", label: "Log", mobile: true },
+  { href: "/activities", label: "Runs", mobile: true },
+  { href: "/goals", label: "Goals", mobile: false },
+  { href: "/settings", label: "Settings", mobile: true },
 ] as const;
 
 /** Bottom tab bar on phones, inline links on wider screens. */
-export function AppNav() {
+export function AppNav({ variant }: { variant: "mobile" | "desktop" }) {
   const pathname = usePathname();
+  const links = variant === "mobile" ? LINKS.filter((l) => l.mobile) : LINKS;
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] sm:static sm:border-0 sm:bg-transparent sm:pb-0"
+      className={
+        variant === "mobile"
+          ? "fixed inset-x-0 bottom-0 z-[1000] border-t border-border bg-surface pb-[env(safe-area-inset-bottom)]"
+          : ""
+      }
     >
-      <ul className="flex justify-around sm:justify-start sm:gap-4">
-        {LINKS.map((l) => {
+      <ul className={variant === "mobile" ? "flex justify-around" : "flex gap-1"}>
+        {links.map((l) => {
           const active = pathname === l.href || pathname.startsWith(`${l.href}/`);
           return (
             <li key={l.href}>
               <Link
                 href={l.href}
                 aria-current={active ? "page" : undefined}
-                className={`block px-3 py-3 text-sm sm:py-1 ${active ? "font-semibold text-accent" : "text-muted"}`}
+                className={`block px-3 text-sm ${variant === "mobile" ? "py-3" : "py-1"} ${active ? "font-semibold text-accent" : "text-muted"}`}
               >
                 {l.label}
               </Link>
