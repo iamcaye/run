@@ -4,7 +4,7 @@ import { StructureBar } from "@/components/plan/structure-bar";
 import { PHASE_LABELS, SESSION_LABELS } from "@/lib/planning/describe";
 import type { Phase } from "@/lib/planning/types";
 import type { CalendarDay, CalendarWeek, MonthGrid } from "@/lib/plan-calendar";
-import { isoWeekday, WEEKDAY_LABELS, type LocalDate } from "@/lib/time";
+import { isoWeekday, WEEKDAY_LABELS } from "@/lib/time";
 import { formatDistanceValue, toDisplayDistance, type Units } from "@/lib/units";
 
 /** Static class names so Tailwind can see them. */
@@ -20,11 +20,20 @@ const NAV_BTN = "rounded-lg border border-border bg-surface px-2.5 py-0.5 text-s
 
 function monthTitle(month: string): string {
   const [y, m] = month.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, 1)).toLocaleString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
+  return new Date(Date.UTC(y, m - 1, 1)).toLocaleString("en-GB", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }
 
 function NavLink({ month, label, aria }: { month: string | null; label: string; aria: string }) {
-  if (!month) return <span aria-label={aria} aria-disabled="true" className={`${NAV_BTN} opacity-40`}>{label}</span>;
+  if (!month)
+    return (
+      <span aria-label={aria} aria-disabled="true" className={`${NAV_BTN} opacity-40`}>
+        {label}
+      </span>
+    );
   return (
     <Link href={`/plan?month=${month}`} aria-label={aria} className={NAV_BTN}>
       {label}
@@ -35,11 +44,15 @@ function NavLink({ month, label, aria }: { month: string | null; label: string; 
 function DayCell({ day, units }: { day: CalendarDay; units: Units }) {
   const restOnly = day.sessions.length > 0 && day.sessions.every((s) => s.type === "rest");
   const classes = [
-    "relative flex min-h-20 flex-col gap-1 rounded-xl border border-border p-1.5",
+    "flex min-h-20 flex-col gap-1 rounded-xl border border-border p-1.5",
     day.isRace ? "bg-hero text-hero-foreground" : restOnly ? "bg-transparent" : "bg-surface",
     !day.inMonth ? "opacity-40" : day.isPast ? "opacity-75" : "",
     day.isToday ? "ring-2 ring-accent" : "",
-    day.emphasis === "quality" ? "border-l-4 border-l-accent" : day.emphasis === "long" ? "border-l-4 border-l-foreground" : "",
+    day.emphasis === "quality"
+      ? "border-l-4 border-l-accent"
+      : day.emphasis === "long"
+        ? "border-l-4 border-l-foreground"
+        : "",
   ].join(" ");
   const number = Number(day.date.slice(8));
 
@@ -51,21 +64,26 @@ function DayCell({ day, units }: { day: CalendarDay; units: Units }) {
       </span>
       {day.sessions.map((s) =>
         s.type === "rest" ? (
-          <span key={s.id} className="text-xs text-muted">Rest</span>
+          <span key={s.id} className="text-xs text-muted">
+            Rest
+          </span>
         ) : (
           <Link key={s.id} href={`/plan/sessions/${s.id}`} className="flex flex-col gap-1">
-            {s.status === "done" || s.status === "missed" ? (
-              <span
-                aria-label={s.status === "done" ? "done" : "missed"}
-                className={`absolute top-1.5 right-2 font-black ${s.status === "done" ? "text-status-good" : "text-status-warning"}`}
-              >
-                {s.status === "done" ? "✓" : "!"}
-              </span>
-            ) : null}
-            <span className="text-xs font-bold">{SESSION_LABELS[s.type]}</span>
+            <span className="flex items-baseline justify-between gap-1">
+              <span className="text-xs font-bold">{SESSION_LABELS[s.type]}</span>
+              {s.status === "done" || s.status === "missed" ? (
+                <span
+                  aria-label={s.status === "done" ? "done" : "missed"}
+                  className={`font-black ${s.status === "done" ? "text-status-good" : "text-status-warning"}`}
+                >
+                  {s.status === "done" ? "✓" : "!"}
+                </span>
+              ) : null}
+            </span>
             {s.structure?.steps.length ? <StructureBar steps={s.structure.steps} units={units} size="sm" /> : null}
             <span className="font-condensed text-base leading-none font-bold">
-              {formatDistanceValue(s.targetKm, units)} <small className="text-[10px] font-semibold opacity-70">{units}</small>
+              {formatDistanceValue(s.targetKm, units)}{" "}
+              <small className="text-[10px] font-semibold opacity-70">{units}</small>
             </span>
           </Link>
         ),
@@ -91,7 +109,8 @@ function WeekCell({ plan, units }: { plan: CalendarWeek["plan"]; units: Units })
       <span className="font-condensed text-base leading-none font-bold">
         {toDisplayDistance(plan.actualKm, units).toFixed(0)}
         <small className="text-[10px] font-semibold text-muted">
-          {" "}/ {toDisplayDistance(plan.plannedKm, units).toFixed(0)} {units}
+          {" "}
+          / {toDisplayDistance(plan.plannedKm, units).toFixed(0)} {units}
         </small>
       </span>
       <span className={`h-1 w-full rounded-full ${PHASE_BG[plan.phase]}`} aria-hidden="true" />
@@ -100,13 +119,15 @@ function WeekCell({ plan, units }: { plan: CalendarWeek["plan"]; units: Units })
 }
 
 /** Month view of the plan: one cell per day, a weekly total on the right. Desktop only (the page hides it below lg). */
-export function MonthCalendar({ grid, units }: { grid: MonthGrid; units: Units; today: LocalDate }) {
+export function MonthCalendar({ grid, units }: { grid: MonthGrid; units: Units }) {
   const headers = grid.weeks[0]?.days.map((d) => WEEKDAY_LABELS[isoWeekday(d.date)].short) ?? [];
   return (
     <section aria-label="Month calendar" className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
         <NavLink month={grid.prev} label="‹" aria="Previous month" />
-        <h2 className="font-condensed text-2xl leading-none font-extrabold uppercase italic">{monthTitle(grid.month)}</h2>
+        <h2 className="font-condensed text-2xl leading-none font-extrabold uppercase italic">
+          {monthTitle(grid.month)}
+        </h2>
         <NavLink month={grid.next} label="›" aria="Next month" />
         <Link href="/plan" className={NAV_BTN}>
           Today
