@@ -1,6 +1,6 @@
 // Race Training service worker — v1: installable app shell + friendly offline page.
 // Deliberately never caches pages or API responses: they contain personal data and must be fresh.
-const VERSION = "rt-v1";
+const VERSION = "rt-v2";
 const SHELL = ["/offline", "/manifest.webmanifest", "/pwa-icon/192", "/pwa-icon/512"];
 
 self.addEventListener("install", (event) => {
