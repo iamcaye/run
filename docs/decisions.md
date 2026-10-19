@@ -109,4 +109,5 @@ Agreed before Phase 1 (2026-10-18).
 - Playwright runs a production build on :3200 against `TEST_DATABASE_URL`. The journey's arrange step backdates the new user's plan by 5 weeks **directly in the test database** (so closed weeks exist); everything else goes through the UI and the real import endpoint. No test-only code paths in the app.
 
 ## Fixtures
-- Health Auto Export fixtures are provisional (`src/lib/import/__fixtures__/hae/provisional-*.json`) until a real anonymized payload arrives.
+- Health Auto Export fixtures are provisional (`src/lib/import/__fixtures__/hae/provisional-*.json`) except `real-v2-es.json`, an anonymized export from a Spanish iPhone.
+- HAE sends workout names in the phone's language ("Outdoor Run" arrives as "Exterior Ejecutar"), so runs are recognised by English and Spanish names (`IMPORT.runningWorkoutPattern`). Imports sent before a name was recognised come back with `pnpm reprocess`.

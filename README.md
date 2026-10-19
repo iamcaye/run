@@ -157,5 +157,5 @@ Open the site in Safari (iOS) or Chrome (Android) → *Share → Add to Home Scr
 ## Roadmap (post-v1)
 - Offline quick-logging with background sync
 - Email verification (plugs into the existing `EmailSender`)
-- Real anonymized Health Auto Export fixtures (current ones are provisional)
+- More real Health Auto Export fixtures (one Spanish export so far; the rest are provisional) and workout names in languages other than English and Spanish
 - Hourly cron on Vercel Pro

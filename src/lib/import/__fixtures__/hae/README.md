@@ -9,4 +9,5 @@ why every mapping detail lives in `mapWorkout()`.
 |---|---|
 | `provisional-v2-outdoor-run.json` | Current format: `{qty, units}` objects, `"yyyy-MM-dd HH:mm:ss +ZZZZ"` dates, HR samples, route |
 | `provisional-v2-mixed.json` | A run, an indoor run (no route), a walk and a cycle ride (skipped), a broken run (invalid) |
+| `real-v2-es.json` | **Real export** from a Spanish iPhone (anonymized: device names removed, route moved to central Madrid, every series cut to 4 points): a strength workout, "Exterior Ejecutar" (run) and "Exterior Caminar" (walk) |
 | `provisional-v1-legacy.json` | Older shape: plain numbers, `latitude`/`longitude`, miles, `heartRate.avg`, ISO dates, no `id` |
