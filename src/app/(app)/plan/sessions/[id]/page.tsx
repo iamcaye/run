@@ -22,7 +22,7 @@ export default async function SessionPage({ params }: PageProps<"/plan/sessions/
       <Link href={`/plan#${session.date}`} className="text-sm text-muted">
         ← Plan
       </Link>
-      <h1 className="text-xl font-semibold">Edit session</h1>
+      <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">Edit session</h1>
       <SessionCard session={session} units={settings.units} today={today} editable={false} />
       <Card>
         <SessionEditForm

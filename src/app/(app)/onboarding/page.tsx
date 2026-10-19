@@ -41,7 +41,7 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
         <p className="text-sm text-muted">
           Step {index + 2} of {STEPS.length + 1} · account created ✓
         </p>
-        <h1 className="text-xl font-semibold">{STEPS[index]?.label}</h1>
+        <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">{STEPS[index]?.label}</h1>
       </div>
       <ol className="flex gap-1" aria-label="Progress">
         {STEPS.map((s, i) => (

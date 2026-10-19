@@ -23,7 +23,7 @@ function Mark({ size }: { size: number }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#ea580c",
+        background: "#c9361a",
         color: "#ffffff",
         fontSize: size * 0.42,
         fontWeight: 700,

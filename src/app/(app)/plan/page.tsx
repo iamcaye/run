@@ -53,7 +53,7 @@ export default async function PlanPage() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-xl font-semibold">{goal.name}</h1>
+        <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">{goal.name}</h1>
         <GoalFacts goal={goal} units={settings.units} today={today} />
       </div>
 

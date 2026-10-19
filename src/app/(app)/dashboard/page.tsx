@@ -3,22 +3,19 @@ import { redirect } from "next/navigation";
 import { AdjustmentCard } from "@/components/adjustments/adjustment-card";
 import { AcwrChart } from "@/components/charts/acwr-chart";
 import { LongRunChart } from "@/components/charts/long-run-chart";
-import { VolumeChart } from "@/components/charts/volume-chart";
+import { RaceHero } from "@/components/dashboard/race-hero";
 import { StatTile } from "@/components/dashboard/stat-tile";
-import { StatusChip } from "@/components/dashboard/status-chip";
-import { dayLabel } from "@/components/plan/session-card";
+import { TodayCard } from "@/components/dashboard/today-card";
+import { VolumeBars } from "@/components/dashboard/volume-bars";
+import { WeekStrip } from "@/components/dashboard/week-strip";
 import { Card } from "@/components/ui/form";
-import { PHASE_LABELS, SESSION_LABELS } from "@/lib/planning/describe";
-import { formatDistance, formatDuration, toDisplayDistance } from "@/lib/units";
+import { addDays, startOfWeek, type IsoWeekday } from "@/lib/time";
+import { formatDistance, formatDistanceValue } from "@/lib/units";
 import { requireUserContext } from "@/server/context";
 import { getDashboard } from "@/services/dashboard";
 import { ensureWeeklyAdaptation } from "@/services/weekly-adaptation";
 
 export const metadata = { title: "Dashboard · Race Training" };
-
-function signedDuration(seconds: number): string {
-  return `${seconds > 0 ? "+" : "−"}${formatDuration(Math.abs(seconds))}`;
-}
 
 export default async function DashboardPage() {
   const { scope, settings, today } = await requireUserContext();
@@ -42,14 +39,18 @@ export default async function DashboardPage() {
   if (!d.goal) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-xl font-semibold">Dashboard</h1>
+        <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">Dashboard</h1>
         {prompts}
-        <Card>
-          <p className="text-sm">No active goal.</p>
-          <Link href="/goals/new" className="self-start text-sm font-medium text-accent">
+        <section className="flex flex-col items-start gap-3 rounded-[22px] bg-hero p-5 text-hero-foreground">
+          <p className="font-condensed text-4xl leading-none font-extrabold italic uppercase">Pick your next race</p>
+          <p className="text-sm">No active goal yet. Set a race and target and you&apos;ll get a plan built around it.</p>
+          <Link
+            href="/goals/new"
+            className="rounded-[14px] bg-hero-foreground px-4 py-3 font-condensed text-lg font-bold tracking-wider text-hero uppercase"
+          >
             Create a goal →
           </Link>
-        </Card>
+        </section>
       </div>
     );
   }
@@ -57,75 +58,90 @@ export default async function DashboardPage() {
   const goal = d.goal;
   const week = d.thisWeekVolume;
   const acwr = d.acwrToday;
-  const target = goal.targetTimeSeconds;
-  const pred = d.prediction;
+
+  const todaySession = d.thisWeek.find((s) => s.date === today) ?? null;
+  const nextSession = d.thisWeek.find((s) => s.date > today && s.type !== "rest") ?? null;
+  const weekStart = startOfWeek(today, settings.weekStart as IsoWeekday);
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const date = addDays(weekStart, i);
+    return { date, session: d.thisWeek.find((s) => s.date === date) ?? null };
+  });
+
+  const profile = d.volume.map((w) => ({ ...w, isFuture: w.weekStart > today }));
+  const runWeeks = profile
+    .map((w, index) => ({ ...w, index }))
+    .filter((w) => !w.isFuture)
+    .slice(-12);
+
+  const lastLong = d.longRuns.findLast((l) => l.date <= today && l.actualKm !== null) ?? null;
+  const nextLong = d.longRuns.find((l) => l.date >= today && l.actualKm === null) ?? null;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3.5">
       {prompts}
 
-      <section aria-labelledby="goal-title" className="flex flex-col gap-1">
-        <div className="flex items-baseline justify-between gap-2">
-          <h1 id="goal-title" className="text-xl font-semibold">
-            {goal.name}
-          </h1>
-          <Link href="/goals" className="shrink-0 text-sm text-accent">
-            Goals →
-          </Link>
-        </div>
-        <p className="text-sm text-muted">
-          {d.daysToRace !== null && d.daysToRace > 0
-            ? `${d.daysToRace} day${d.daysToRace === 1 ? "" : "s"} to go`
-            : d.daysToRace === 0
-              ? "Race day!"
-              : "Race day has passed"}
-          {d.phase ? ` · ${PHASE_LABELS[d.phase]}` : ""}
-          {d.weekNumber && d.totalWeeks ? ` · week ${d.weekNumber} of ${d.totalWeeks}` : ""}
-        </p>
-      </section>
+      <RaceHero
+        name={goal.name}
+        distanceKm={goal.distanceKm}
+        units={units}
+        daysToRace={d.daysToRace}
+        prediction={d.prediction}
+        targetSeconds={goal.targetTimeSeconds}
+        weeks={profile}
+        weekNumber={d.weekNumber}
+        totalWeeks={d.totalWeeks}
+      />
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <TodayCard session={todaySession} next={nextSession} today={today} units={units} />
+
+      <div className="grid grid-cols-3 gap-2">
         <StatTile
-          label={target ? "Predicted vs target" : "Predicted finish"}
-          value={pred ? formatDuration(pred.predictedSeconds) : "—"}
-          detail={
-            pred ? (
+          label="This week"
+          value={
+            week ? (
               <>
-                {target
-                  ? `${signedDuration(pred.predictedSeconds - target)} vs ${formatDuration(target)} target`
-                  : `from a ${formatDistance(pred.fromKm, units)} run`}
-                {pred.basis === "any" ? (
-                  <span className="block">From an easy run — likely conservative until you log a harder effort.</span>
-                ) : null}
+                {formatDistanceValue(week.actualKm, units)}
+                <span className="text-base text-muted">
+                  /{formatDistanceValue(week.plannedKm, units)} {units}
+                </span>
               </>
             ) : (
-              `Needs a run of ${formatDistance(Math.max(3, goal.distanceKm * 0.25), units, 0)}+ in the last 6 weeks`
+              "—"
+            )
+          }
+          meter={week && week.plannedKm > 0 ? week.actualKm / week.plannedKm : undefined}
+          detail={week?.compliance != null ? `${Math.round(week.compliance * 100)}% so far` : undefined}
+        />
+        <StatTile
+          label="Load"
+          value={acwr && acwr.ratio !== null && !acwr.insufficientHistory ? acwr.ratio.toFixed(2) : "—"}
+          detail={
+            !acwr || acwr.insufficientHistory ? (
+              "After 4 weeks of runs"
+            ) : acwr.flag === "high" ? (
+              <span className="text-status-critical">▲ High — ease off</span>
+            ) : acwr.flag === "low" ? (
+              <span className="text-status-warning">▼ Low — building</span>
+            ) : acwr.flag === "ok" ? (
+              <span className="text-status-good">● In range</span>
+            ) : (
+              "No recent load"
             )
           }
         />
         <StatTile
-          label="This week"
-          value={week ? `${formatDistance(week.actualKm, units, 0)}` : "—"}
-          detail={
-            week
-              ? `of ${formatDistance(week.plannedKm, units, 0)} planned${week.compliance !== null ? ` · ${Math.round(week.compliance * 100)}% so far` : ""}`
-              : undefined
+          label="Long run"
+          value={
+            lastLong?.actualKm != null ? (
+              <>
+                {formatDistanceValue(lastLong.actualKm, units)}
+                <span className="text-base text-muted"> {units}</span>
+              </>
+            ) : (
+              "—"
+            )
           }
-        />
-        <StatTile
-          label="Load ratio (ACWR)"
-          value={acwr && acwr.ratio !== null && !acwr.insufficientHistory ? acwr.ratio.toFixed(2) : "—"}
-          detail={
-            !acwr || acwr.insufficientHistory
-              ? "Available after 4 weeks of runs"
-              : acwr.flag === "high"
-              ? "▲ High — ease off"
-              : acwr.flag === "low"
-                ? "▼ Low — building back"
-                : acwr.flag === "ok"
-                  ? "● In range"
-                  : "No recent load"
-          }
+          detail={nextLong ? `Next: ${formatDistance(nextLong.plannedKm, units, 0)}` : undefined}
         />
       </div>
 
@@ -137,41 +153,22 @@ export default async function DashboardPage() {
         </Card>
       ) : null}
 
-      <Card title="This week" action={<Link href="/plan" className="text-sm text-accent">Full plan →</Link>}>
-        {d.thisWeek.length === 0 ? (
-          <p className="text-sm text-muted">No sessions this week.</p>
-        ) : (
-          <ul className="flex flex-col divide-y divide-border">
-            {d.thisWeek.map((s) => (
-              <li key={s.id} className="flex items-center gap-3 py-2 text-sm">
-                <span className="w-20 shrink-0 text-xs text-muted">{dayLabel(s.date)}</span>
-                <span className="flex-1">{SESSION_LABELS[s.type]}</span>
-                <span className="whitespace-nowrap tabular-nums text-muted">
-                  {s.actualKm !== null
-                    ? `${toDisplayDistance(s.actualKm, units).toFixed(1)} / ${formatDistance(s.targetKm, units)}`
-                    : formatDistance(s.targetKm, units)}
-                </span>
-                <span className="w-20 text-right">
-                  <StatusChip status={s.status} />
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+      <Card
+        title="This week"
+        action={
+          <Link href="/plan" className="text-sm font-semibold text-accent">
+            Full plan →
+          </Link>
+        }
+      >
+        <WeekStrip days={weekDays} units={units} />
       </Card>
 
-      <Card>
-        <VolumeChart
-          units={units}
-          data={d.volume.map((w) => ({
-            weekStart: w.weekStart,
-            plannedKm: w.plannedKm,
-            actualKm: w.actualKm,
-            isCurrent: w.isCurrent,
-            isFuture: w.weekStart > today,
-          }))}
-        />
-      </Card>
+      {runWeeks.length > 0 ? (
+        <Card>
+          <VolumeBars weeks={runWeeks} units={units} />
+        </Card>
+      ) : null}
 
       <Card>
         <AcwrChart

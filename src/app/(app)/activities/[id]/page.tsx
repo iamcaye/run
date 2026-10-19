@@ -38,7 +38,7 @@ export default async function ActivityPage({ params, searchParams }: PageProps<"
       </Link>
       {justLogged ? <FormSuccess>Run logged{session ? ` and linked to your ${SESSION_LABELS[session.type].toLowerCase()}` : ""}.</FormSuccess> : null}
       <div>
-        <h1 className="text-xl font-semibold">{activityDate(localDateOf(a.startAt, settings.timezone))}</h1>
+        <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">{activityDate(localDateOf(a.startAt, settings.timezone))}</h1>
         <p className="text-sm text-muted">
           {session ? SESSION_LABELS[session.type] : "Unplanned run"}
           {a.source === "manual" ? " · logged manually" : " · from Apple Watch"}

@@ -43,7 +43,7 @@ export default async function GoalsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Goals</h1>
+        <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">Goals</h1>
         <Link href="/goals/new" className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-foreground">
           New goal
         </Link>
