@@ -1,18 +1,18 @@
 import { weeklyVolume, sessionStatus, type SessionStatus } from "@/lib/metrics/volume";
 import type { MetricActivity } from "@/lib/metrics/types";
 import { QUALITY_TYPES } from "@/lib/planning/describe";
-import type { Phase } from "@/lib/planning/types";
+import type { Phase, SessionStructure } from "@/lib/planning/types";
 import { addDays, startOfWeek, type IsoWeekday, type LocalDate } from "@/lib/time";
-import type { PlannedSession } from "@/server/dal";
+import type { SessionType } from "@/config/training";
 
 export type YearMonth = string; // "YYYY-MM"
 
 export type CalendarSession = {
   id: string;
-  type: PlannedSession["type"];
+  type: SessionType;
   targetKm: number;
   status: SessionStatus;
-  structure: PlannedSession["structure"];
+  structure: SessionStructure | null;
 };
 export type CalendarRun = { id: string; km: number };
 export type CalendarDay = {
@@ -43,7 +43,7 @@ function shiftMonth(month: YearMonth, delta: number): YearMonth {
 }
 
 /** Resolve the `?month=` param: valid and inside the plan's months → as is; otherwise today's month clamped to [first, last] plan month. */
-export function resolveMonth(param: string | undefined, today: LocalDate, sessions: readonly Pick<PlannedSession, "date">[]): YearMonth {
+export function resolveMonth(param: string | undefined, today: LocalDate, sessions: readonly { date: LocalDate }[]): YearMonth {
   if (sessions.length === 0) return param && MONTH_RE.test(param) ? param : monthOf(today);
   const dates = sessions.map((s) => s.date);
   const first = monthOf(dates.reduce((a, b) => (a < b ? a : b)));
@@ -64,7 +64,7 @@ export function buildMonthGrid(input: {
   month: YearMonth;
   weekStart: IsoWeekday;
   today: LocalDate;
-  sessions: readonly Pick<PlannedSession, "id" | "date" | "type" | "targetKm" | "phase" | "structure">[];
+  sessions: readonly { id: string; date: LocalDate; type: SessionType; targetKm: number; phase: Phase; structure: SessionStructure | null }[];
   activities: readonly Pick<MetricActivity, "id" | "localDate" | "km" | "plannedSessionId">[];
 }): MonthGrid {
   const { month, weekStart, today, sessions, activities } = input;
