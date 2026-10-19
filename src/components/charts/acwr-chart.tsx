@@ -38,7 +38,7 @@ export function AcwrChart({ data, insufficientHistory }: { data: readonly AcwrDa
           Not enough history yet
         </p>
       ) : (
-      <div className="h-48">
+      <div className="h-48 lg:h-56">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
             <ReferenceArea

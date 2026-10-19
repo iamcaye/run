@@ -1,5 +1,6 @@
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Card } from "@/components/ui/form";
+import { NarrowPage } from "@/components/ui/narrow-page";
 import { ImportSection } from "@/components/import/import-section";
 import { DeleteAccount } from "@/components/settings/delete-account";
 import {
@@ -16,7 +17,7 @@ export default async function SettingsPage() {
   const { user, settings, scope } = await requireUserContext();
 
   return (
-    <div className="flex flex-col gap-4">
+    <NarrowPage>
       <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">Settings</h1>
       <Card title="Profile" action={<span className="text-sm text-accent"><SignOutButton /></span>}>
         <p className="-mt-2 text-sm text-muted">{user.email}</p>
@@ -41,6 +42,6 @@ export default async function SettingsPage() {
       <Card title="Danger zone">
         <DeleteAccount />
       </Card>
-    </div>
+    </NarrowPage>
   );
 }

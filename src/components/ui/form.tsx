@@ -176,9 +176,9 @@ export function AuthCard({ title, children }: { title: string; children: ReactNo
   );
 }
 
-export function Card({ title, children, action }: { title?: string; children: ReactNode; action?: ReactNode }) {
+export function Card({ title, children, action, className = "" }: { title?: string; children: ReactNode; action?: ReactNode; className?: string }) {
   return (
-    <section className="flex flex-col gap-4 rounded-[20px] bg-surface p-4">
+    <section className={`flex flex-col gap-4 rounded-[20px] bg-surface p-4 ${className}`}>
       {title || action ? (
         <div className="flex items-baseline justify-between gap-2">
           {title ? <h2 className="font-condensed text-xl font-extrabold uppercase">{title}</h2> : <span />}

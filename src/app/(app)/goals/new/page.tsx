@@ -1,5 +1,6 @@
 import { emptyGoalDefaults, GoalForm } from "@/components/goals/goal-form";
 import { Card } from "@/components/ui/form";
+import { NarrowPage } from "@/components/ui/narrow-page";
 import { addDays } from "@/lib/time";
 import { createGoalAction } from "@/server/actions/goals";
 import { requireUserContext } from "@/server/context";
@@ -11,7 +12,7 @@ export default async function NewGoalPage() {
   const hasActive = (await scope.goals.getActive()) !== null;
 
   return (
-    <div className="flex flex-col gap-4">
+    <NarrowPage>
       <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">New goal</h1>
       <Card>
         <GoalForm
@@ -23,6 +24,6 @@ export default async function NewGoalPage() {
           showMakeActive={hasActive}
         />
       </Card>
-    </div>
+    </NarrowPage>
   );
 }
