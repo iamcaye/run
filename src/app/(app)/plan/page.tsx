@@ -1,24 +1,27 @@
 import Link from "next/link";
 import { AdjustmentCard } from "@/components/adjustments/adjustment-card";
 import { GoalFacts } from "@/components/goals/goal-summary";
+import { MonthCalendar } from "@/components/plan/month-calendar";
 import { PHASE_BG } from "@/components/plan/phase";
 import { PlanOverview } from "@/components/plan/plan-overview";
 import { RegenerateButton } from "@/components/plan/regenerate-button";
 import { dayLabel, SessionCard } from "@/components/plan/session-card";
 import { Card } from "@/components/ui/form";
+import { resolveMonth } from "@/lib/plan-calendar";
 import { PHASE_LABELS, summarizeWarnings } from "@/lib/planning/describe";
 import { addDays, startOfWeek, type IsoWeekday } from "@/lib/time";
 import { formatDistance } from "@/lib/units";
 import { requireUserContext } from "@/server/context";
 import type { PlannedSession } from "@/server/dal";
 import { toAdjustmentView } from "@/services/adjustment-view";
+import { getPlanCalendar } from "@/services/plan-calendar";
 import { planInsights } from "@/services/plans";
 
 export const metadata = { title: "Plan · Race Training" };
 
 type WeekGroup = { start: string; sessions: PlannedSession[] };
 
-export default async function PlanPage() {
+export default async function PlanPage({ searchParams }: PageProps<"/plan">) {
   const { scope, settings, today } = await requireUserContext();
   const goal = await scope.goals.getActive();
   if (!goal) {
@@ -36,7 +39,12 @@ export default async function PlanPage() {
     scope.sessions.listForGoal(goal.id),
     scope.adjustments.listForGoal(goal.id),
   ]);
-  const insights = await planInsights(scope, goal, settings, today, sessions[0]?.date);
+  const monthParam = (await searchParams).month;
+  const month = resolveMonth(typeof monthParam === "string" ? monthParam : undefined, today, sessions);
+  const [insights, grid] = await Promise.all([
+    planInsights(scope, goal, settings, today, sessions[0]?.date),
+    getPlanCalendar(scope, settings, sessions, month, today),
+  ]);
 
   // Group by calendar week (user-moved sessions land in the week they now sit in).
   const weekStart = settings.weekStart as IsoWeekday;
@@ -52,6 +60,7 @@ export default async function PlanPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_1.3fr] lg:items-end lg:gap-6">
       <div>
         <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">{goal.name}</h1>
         <GoalFacts goal={goal} units={settings.units} today={today} />
@@ -81,6 +90,7 @@ export default async function PlanPage() {
           <RegenerateButton goalId={goal.id} />
         </div>
       </Card>
+      </div>
 
       {groups.length === 0 ? (
         <Card>
@@ -88,6 +98,11 @@ export default async function PlanPage() {
         </Card>
       ) : null}
 
+      <div className="hidden lg:block">
+        <MonthCalendar grid={grid} units={settings.units} today={today} />
+      </div>
+
+      <div className="flex flex-col gap-4 lg:hidden">
       {groups.map((g, i) => {
         const phase = g.sessions[0]?.phase ?? "base";
         const total = g.sessions.reduce((a, s) => a + s.targetKm, 0);
@@ -120,6 +135,7 @@ export default async function PlanPage() {
           </section>
         );
       })}
+      </div>
 
       <Card title="Adjustment history">
         {adjustments.length === 0 ? (
