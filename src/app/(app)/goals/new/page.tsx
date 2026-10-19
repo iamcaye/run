@@ -1,6 +1,6 @@
-import { NarrowPage } from "@/components/ui/narrow-page";
 import { emptyGoalDefaults, GoalForm } from "@/components/goals/goal-form";
 import { Card } from "@/components/ui/form";
+import { NarrowPage } from "@/components/ui/narrow-page";
 import { addDays } from "@/lib/time";
 import { createGoalAction } from "@/server/actions/goals";
 import { requireUserContext } from "@/server/context";

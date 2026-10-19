@@ -1,6 +1,6 @@
-import { NarrowPage } from "@/components/ui/narrow-page";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Card } from "@/components/ui/form";
+import { NarrowPage } from "@/components/ui/narrow-page";
 import { ImportSection } from "@/components/import/import-section";
 import { DeleteAccount } from "@/components/settings/delete-account";
 import {

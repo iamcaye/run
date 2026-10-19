@@ -1,9 +1,9 @@
-import { NarrowPage } from "@/components/ui/narrow-page";
 import Link from "next/link";
 import { ActivityRow } from "@/components/activities/activity-row";
 import { ManualRunForm } from "@/components/activities/manual-run-form";
 import { RpeNotesForm } from "@/components/activities/rpe-notes-form";
 import { Card } from "@/components/ui/form";
+import { NarrowPage } from "@/components/ui/narrow-page";
 import { toActivityRows } from "@/server/activity-rows";
 import { requireUserContext } from "@/server/context";
 
