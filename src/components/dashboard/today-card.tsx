@@ -1,41 +1,10 @@
 import Link from "next/link";
 import { describeStep, SESSION_LABELS } from "@/lib/planning/describe";
-import type { StructureStep } from "@/lib/planning/types";
 import { isoWeekday, WEEKDAY_LABELS, type LocalDate } from "@/lib/time";
 import { formatDistance, formatDistanceValue, formatPace, type Units } from "@/lib/units";
 import type { DashboardSession } from "@/services/dashboard";
 import { dayLabel } from "@/components/plan/session-card";
-
-type Segment = { weight: number; work: boolean };
-
-// Rough distance equivalents so time-based reps and recoveries get a sensible width.
-const REP_SEC_PER_KM = 240;
-const RECOVERY_SEC_PER_KM = 360;
-
-/** Session steps as proportional blocks: easy parts low, work parts tall. */
-export function structureSegments(steps: readonly StructureStep[]): Segment[] {
-  const out: Segment[] = [];
-  for (const step of steps) {
-    switch (step.kind) {
-      case "warmup":
-      case "cooldown":
-        out.push({ weight: step.km, work: false });
-        break;
-      case "steady":
-        out.push({ weight: step.km, work: true });
-        break;
-      case "reps": {
-        const rep = step.repKm ?? (step.repSeconds ?? 0) / REP_SEC_PER_KM;
-        for (let i = 0; i < step.reps; i++) {
-          out.push({ weight: rep, work: true });
-          if (i < step.reps - 1) out.push({ weight: step.recoverySeconds / RECOVERY_SEC_PER_KM, work: false });
-        }
-        break;
-      }
-    }
-  }
-  return out.filter((s) => s.weight > 0);
-}
+import { StructureBar } from "@/components/plan/structure-bar";
 
 const eyebrow = "flex items-center justify-between gap-2 text-xs font-bold tracking-widest uppercase";
 const weekday = (date: LocalDate) => WEEKDAY_LABELS[isoWeekday(date)].short;
@@ -69,7 +38,6 @@ export function TodayCard({
   }
 
   const steps = session.structure?.steps ?? [];
-  const segments = structureSegments(steps);
   const done = session.status === "done";
 
   return (
@@ -85,17 +53,7 @@ export function TodayCard({
           <span className="text-base text-muted"> {units}</span>
         </span>
       </div>
-      {segments.length > 1 ? (
-        <div role="img" aria-label={`Session structure: ${steps.map((s) => describeStep(s, units)).join("; ")}`} className="flex h-9 items-end gap-[3px]">
-          {segments.map((s, i) => (
-            <div
-              key={i}
-              className={`min-w-[3px] rounded ${s.work ? "h-9 bg-accent" : "h-3 bg-track"}`}
-              style={{ flexGrow: s.weight, flexBasis: 0 }}
-            />
-          ))}
-        </div>
-      ) : null}
+      <StructureBar steps={steps} units={units} />
       {steps.length ? (
         <ol className="flex flex-wrap gap-x-1.5 text-sm text-muted">
           {steps.map((s, i) => (

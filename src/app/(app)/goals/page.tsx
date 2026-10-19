@@ -20,7 +20,7 @@ export default async function GoalsPage() {
   const row = (goal: Goal) => (
     <li key={goal.id} className="flex flex-col gap-2 border-b border-border py-3 last:border-0">
       <div className="flex items-center justify-between gap-2">
-        <Link href={`/goals/${goal.id}`} className="font-medium hover:underline">
+        <Link href={`/goals/${goal.id}`} className="font-condensed text-2xl leading-tight font-bold uppercase hover:text-accent">
           {goal.name}
         </Link>
         <StatusBadge status={goal.status} />
@@ -44,7 +44,7 @@ export default async function GoalsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">Goals</h1>
-        <Link href="/goals/new" className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-foreground">
+        <Link href="/goals/new" className="rounded-xl bg-accent px-3.5 py-2 text-sm font-semibold text-accent-foreground">
           New goal
         </Link>
       </div>

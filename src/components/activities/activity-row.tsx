@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SESSION_LABELS } from "@/lib/planning/describe";
-import { formatDistance, formatDuration, formatPace, type Units } from "@/lib/units";
+import { formatDistanceValue, formatDuration, formatPace, type Units } from "@/lib/units";
 import type { SessionType } from "@/config/training";
 import { rpeLabel } from "./rpe";
 
@@ -21,27 +21,34 @@ export function activityDate(localDate: string): string {
 }
 
 export function ActivityRow({ a, units }: { a: ActivityRowData; units: Units }) {
+  const d = new Date(`${a.localDate}T00:00:00Z`);
   return (
     <li>
-      <Link href={`/activities/${a.id}`} className="flex items-center gap-3 py-3 hover:bg-foreground/5">
+      <Link href={`/activities/${a.id}`} className="flex items-center gap-3 py-3 transition-colors hover:bg-foreground/5">
+        <span className="sr-only">{activityDate(a.localDate)}</span>
+        <span aria-hidden className="flex w-10 shrink-0 flex-col items-center leading-none">
+          <span className="text-[11px] font-bold tracking-wide text-muted uppercase">
+            {d.toLocaleDateString("en-GB", { weekday: "short", timeZone: "UTC" })}
+          </span>
+          <span className="font-condensed text-2xl font-bold tabular-nums">{d.getUTCDate()}</span>
+          <span className="text-[10px] font-semibold text-muted uppercase">
+            {d.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" })}
+          </span>
+        </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium">
-            {activityDate(a.localDate)} <span className="font-normal text-muted">· {a.startTime}</span>
-          </p>
-          <p className="truncate text-xs text-muted">
-            {a.sessionType ? SESSION_LABELS[a.sessionType] : "Unplanned run"}
-            {a.source === "manual" ? " · logged manually" : ""}
-            {a.avgHr ? ` · ${a.avgHr} bpm` : ""}
-          </p>
-        </div>
-        <div className="text-right text-sm tabular-nums">
-          <p className="font-medium">{formatDistance(a.km, units)}</p>
-          <p className="text-xs text-muted">
+          <p className="truncate font-semibold">{a.sessionType ? SESSION_LABELS[a.sessionType] : "Unplanned run"}</p>
+          <p className="truncate text-xs text-muted tabular-nums">
             {formatDuration(a.seconds)} · {formatPace(a.seconds / a.km, units)}
+            {a.avgHr ? ` · ${a.avgHr} bpm` : ""}
+            {a.source === "manual" ? " · manual" : ""}
           </p>
         </div>
+        <span className="font-condensed text-2xl font-bold tabular-nums">
+          {formatDistanceValue(a.km, units)}
+          <span className="text-sm text-muted"> {units}</span>
+        </span>
         <span
-          className={`w-12 shrink-0 text-center text-xs ${a.rpe ? "font-semibold" : "text-accent"}`}
+          className={`w-12 shrink-0 rounded-full py-1 text-center text-[11px] font-bold ${a.rpe ? "bg-foreground text-background" : "text-accent ring-[1.5px] ring-inset ring-accent"}`}
           title={a.rpe ? `RPE ${a.rpe} — ${rpeLabel(a.rpe)}` : "No RPE yet"}
         >
           {a.rpe ? `RPE ${a.rpe}` : "+ RPE"}

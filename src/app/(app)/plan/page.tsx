@@ -95,19 +95,19 @@ export default async function PlanPage() {
         const isPast = addDays(g.start, 6) < today;
         return (
           <section key={g.start} aria-labelledby={`week-${g.start}`} className="flex flex-col gap-2">
-            <h2 id={`week-${g.start}`} className="flex items-center gap-2 text-sm">
-              <span className={`inline-block size-2.5 rounded-sm ${PHASE_BG[phase]}`} />
-              <span className="font-semibold">
+            <h2 id={`week-${g.start}`} className="flex flex-wrap items-baseline gap-x-2 px-1 pt-2">
+              <span className="font-condensed text-xl font-extrabold uppercase">
                 Week {i + 1}
-                {isCurrent ? " · this week" : ""}
+                {isCurrent ? <span className="text-accent"> · this week</span> : null}
               </span>
-              <span className="text-muted">
+              <span className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-muted uppercase">
+                <span className={`inline-block size-2.5 rounded-full ${PHASE_BG[phase]}`} />
                 {PHASE_LABELS[phase]} · {dayLabel(g.start)} · {formatDistance(total, settings.units)}
               </span>
             </h2>
             {isPast && !isCurrent ? (
               <details>
-                <summary className="cursor-pointer text-xs text-muted">Show {g.sessions.length} past sessions</summary>
+                <summary className="cursor-pointer px-1 text-xs font-semibold text-muted">Show {g.sessions.length} past sessions</summary>
                 <div className="mt-2 flex flex-col gap-2">
                   {g.sessions.map((s) => (
                     <SessionCard key={s.id} session={s} units={settings.units} today={today} />

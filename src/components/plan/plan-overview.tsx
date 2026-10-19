@@ -23,7 +23,7 @@ export function PlanOverview({ weeks, units }: { weeks: readonly WeekBar[]; unit
           <div
             key={w.index}
             title={`Week ${w.index + 1}: ${toDisplayDistance(w.km, units).toFixed(1)} ${units}`}
-            className={`min-w-0 flex-1 rounded-t-sm ${PHASE_BG[w.phase]} ${w.isCurrent ? "outline-2 outline-offset-1 outline-foreground" : ""}`}
+            className={`min-w-0 flex-1 rounded-t-[4px] ${PHASE_BG[w.phase]} ${w.isCurrent ? "outline-2 outline-offset-2 outline-accent" : ""}`}
             style={{ height: `${Math.max(4, (w.km / max) * 100)}%` }}
           />
         ))}
@@ -31,7 +31,7 @@ export function PlanOverview({ weeks, units }: { weeks: readonly WeekBar[]; unit
       <figcaption className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
         {phases.map((p) => (
           <span key={p} className="flex items-center gap-1">
-            <span className={`inline-block size-2.5 rounded-sm ${PHASE_BG[p]}`} />
+            <span className={`inline-block size-2.5 rounded-full ${PHASE_BG[p]}`} />
             {PHASE_LABELS[p]}
           </span>
         ))}

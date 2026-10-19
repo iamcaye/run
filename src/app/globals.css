@@ -14,11 +14,12 @@
   --hero: #c9361a;
   --hero-foreground: #ffffff;
   --danger: #c42b2b;
-  --phase-base: #93c5fd;
-  --phase-build: #fbbf24;
-  --phase-specific: #f97316;
-  --phase-taper: #a7f3d0;
-  --phase-race: #dc2626;
+  /* Phases climb in lightness-separated steps: stone → amber → track red → ink; taper eases to sage. */
+  --phase-base: #cfc6b8;
+  --phase-build: #e9a23b;
+  --phase-specific: #c9361a;
+  --phase-taper: #8fbfa4;
+  --phase-race: #1a1714;
   /* Charts: planned in ink, run in track red, plus fixed status colours. */
   --series-1: #1a1714;
   --series-2: #c9361a;
@@ -38,11 +39,11 @@
     --accent: #f06a4a;
     --accent-foreground: #1a1714;
     --danger: #f87171;
-    --phase-base: #1d4ed8;
-    --phase-build: #b45309;
-    --phase-specific: #ea580c;
-    --phase-taper: #047857;
-    --phase-race: #f87171;
+    --phase-base: #5a5047;
+    --phase-build: #c98a2b;
+    --phase-specific: #f06a4a;
+    --phase-taper: #4e8f6e;
+    --phase-race: #f4f1ea;
     --series-1: #f4f1ea;
     --series-2: #f06a4a;
     --status-good: #4ade80;
