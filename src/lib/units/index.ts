@@ -16,6 +16,12 @@ export function formatDistance(km: number, units: Units, digits = 1): string {
   return `${toDisplayDistance(km, units).toFixed(digits)} ${units}`;
 }
 
+/** Bare number for big display figures, dropping a trailing ".0": "12", "10.2". */
+export function formatDistanceValue(km: number, units: Units): string {
+  const v = Math.round(toDisplayDistance(km, units) * 10) / 10;
+  return Number.isInteger(v) ? v.toFixed(0) : v.toFixed(1);
+}
+
 /** "4:59 /km" or "8:01 /mi". */
 export function formatPace(secPerKm: number, units: Units): string {
   const secPerUnit = units === "mi" ? secPerKm * KM_PER_MI : secPerKm;

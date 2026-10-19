@@ -2,9 +2,10 @@
 
 import type { ComponentProps, ReactNode } from "react";
 import { useFormStatus } from "react-dom";
+import { Wordmark } from "./wordmark";
 
 const inputClass =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-base outline-none focus:border-accent aria-invalid:border-danger";
+  "w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-base outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 aria-invalid:border-danger";
 
 function FieldShell({
   label,
@@ -92,7 +93,7 @@ export function ChipGroup({
               defaultChecked={defaultValues.includes(o.value)}
               className="peer sr-only"
             />
-            <span className="inline-block rounded-full border border-border px-3 py-1.5 peer-checked:border-accent peer-checked:bg-accent peer-checked:text-accent-foreground peer-focus-visible:outline-2 peer-focus-visible:outline-accent">
+            <span className="inline-block rounded-full border border-border bg-surface px-3 py-1.5 font-medium peer-checked:border-accent peer-checked:bg-accent peer-checked:text-accent-foreground peer-focus-visible:outline-2 peer-focus-visible:outline-accent">
               {o.label}
             </span>
           </label>
@@ -116,15 +117,16 @@ export function Button({
   className = "",
   variant = "primary",
   ...props
-}: ComponentProps<"button"> & { variant?: "primary" | "secondary" | "danger" }) {
+}: ComponentProps<"button"> & { variant?: "primary" | "secondary" | "ink" | "danger" }) {
   const styles = {
     primary: "bg-accent text-accent-foreground",
     secondary: "border border-border bg-surface",
+    ink: "bg-foreground text-background",
     danger: "bg-danger text-white",
   }[variant];
   return (
     <button
-      className={`rounded-lg px-4 py-2.5 font-medium disabled:opacity-60 ${styles} ${className}`}
+      className={`rounded-xl px-4 py-2.5 font-semibold transition-transform active:scale-[0.98] disabled:opacity-60 ${styles} ${className}`}
       {...props}
     />
   );
@@ -167,7 +169,8 @@ export function FormSuccess({ children }: { children: ReactNode }) {
 export function AuthCard({ title, children }: { title: string; children: ReactNode }) {
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-10">
-      <h1 className="text-2xl font-semibold">{title}</h1>
+      <Wordmark className="text-2xl" />
+      <h1 className="font-condensed text-4xl font-extrabold uppercase">{title}</h1>
       {children}
     </main>
   );
@@ -175,10 +178,10 @@ export function AuthCard({ title, children }: { title: string; children: ReactNo
 
 export function Card({ title, children, action }: { title?: string; children: ReactNode; action?: ReactNode }) {
   return (
-    <section className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4">
+    <section className="flex flex-col gap-4 rounded-[20px] bg-surface p-4">
       {title || action ? (
-        <div className="flex items-center justify-between gap-2">
-          {title ? <h2 className="font-semibold">{title}</h2> : <span />}
+        <div className="flex items-baseline justify-between gap-2">
+          {title ? <h2 className="font-condensed text-xl font-extrabold uppercase">{title}</h2> : <span />}
           {action}
         </div>
       ) : null}

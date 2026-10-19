@@ -34,7 +34,7 @@ export type Dashboard = {
   thisWeek: DashboardSession[];
   thisWeekVolume: WeekVolume | null;
   pendingAdjustments: AdjustmentView[];
-  volume: (WeekVolume & { isCurrent: boolean })[];
+  volume: (WeekVolume & { isCurrent: boolean; phase: Phase | null })[];
   acwr: AcwrPoint[];
   acwrToday: AcwrPoint | null;
   /** Share of last 28 days' load whose RPE was estimated rather than logged. */
@@ -87,8 +87,13 @@ export async function getDashboard(scope: UserScope, settings: Settings, today: 
 
   const metricSessions = sessions.map((s) => ({ id: s.id, date: s.date, type: s.type, targetKm: s.targetKm }));
   const currentWeek = startOfWeek(today, weekStart);
+  const phaseByWeek = new Map<LocalDate, Phase>();
+  for (const s of sessions) {
+    const w = startOfWeek(s.date, weekStart);
+    if (!phaseByWeek.has(w)) phaseByWeek.set(w, s.phase);
+  }
   const volume = weeklyVolume({ sessions: metricSessions, activities: activities.filter((a) => a.localDate >= planStart), weekStart, asOf: today }).map(
-    (w) => ({ ...w, isCurrent: w.weekStart === currentWeek }),
+    (w) => ({ ...w, isCurrent: w.weekStart === currentWeek, phase: phaseByWeek.get(w.weekStart) ?? null }),
   );
 
   const actualBySession = new Map<string, number>();

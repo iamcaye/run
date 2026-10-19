@@ -37,7 +37,7 @@ export function ProfileForm({ name }: { name: string }) {
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <Field label="Display name" name="name" defaultValue={name} required error={state.fieldErrors?.name} />
       <Status state={state} />
-      <SubmitButton pending={pending} pendingLabel="Saving…" className="self-start">
+      <SubmitButton pending={pending} pendingLabel="Saving…" variant="ink" className="self-start">
         Save
       </SubmitButton>
     </form>
@@ -99,7 +99,7 @@ export function PreferencesForm(props: { timezone: string; units: string; weekSt
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <PreferencesFields {...props} errors={state.fieldErrors} />
       <Status state={state} />
-      <SubmitButton pending={pending} pendingLabel="Saving…" className="self-start">
+      <SubmitButton pending={pending} pendingLabel="Saving…" variant="ink" className="self-start">
         Save
       </SubmitButton>
     </form>
@@ -150,7 +150,7 @@ export function AvailabilityForm(props: { runDays: readonly number[]; longRunDay
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <AvailabilityFields {...props} errors={state.fieldErrors} />
       <Status state={state} />
-      <SubmitButton pending={pending} pendingLabel="Saving…" className="self-start">
+      <SubmitButton pending={pending} pendingLabel="Saving…" variant="ink" className="self-start">
         Save
       </SubmitButton>
     </form>
@@ -187,7 +187,7 @@ export function HeartRateForm({ maxHr, restHr }: { maxHr: number | null; restHr:
         />
       </div>
       <Status state={state} />
-      <SubmitButton pending={pending} pendingLabel="Saving…" className="self-start">
+      <SubmitButton pending={pending} pendingLabel="Saving…" variant="ink" className="self-start">
         Save
       </SubmitButton>
     </form>

@@ -65,7 +65,7 @@ export function ImportTokens({ tokens, endpoint }: { tokens: readonly TokenRow[]
         <div className="flex-1">
           <Field label="New token for" name="name" placeholder="My iPhone" required error={state.fieldErrors?.name} />
         </div>
-        <SubmitButton pending={pending} pendingLabel="Creating…">
+        <SubmitButton pending={pending} pendingLabel="Creating…" variant="ink">
           Create
         </SubmitButton>
       </form>

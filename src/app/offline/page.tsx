@@ -7,7 +7,7 @@ export default function OfflinePage() {
       <p className="text-4xl" aria-hidden>
         ⛰️
       </p>
-      <h1 className="text-xl font-semibold">You&apos;re offline</h1>
+      <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">You&apos;re offline</h1>
       <p className="text-sm text-muted">
         Your plan and runs need a connection to load. Your watch keeps recording — Health Auto Export will sync
         the runs once you&apos;re back online.

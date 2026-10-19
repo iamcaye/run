@@ -1,3 +1,4 @@
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Card } from "@/components/ui/form";
 import { ImportSection } from "@/components/import/import-section";
 import { DeleteAccount } from "@/components/settings/delete-account";
@@ -16,8 +17,8 @@ export default async function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">Settings</h1>
-      <Card title="Profile">
+      <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">Settings</h1>
+      <Card title="Profile" action={<span className="text-sm text-accent"><SignOutButton /></span>}>
         <p className="-mt-2 text-sm text-muted">{user.email}</p>
         <ProfileForm name={user.name} />
       </Card>

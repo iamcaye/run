@@ -17,7 +17,7 @@ export function ChartFrame({
   return (
     <figure className="flex flex-col gap-2">
       <figcaption className="flex flex-col gap-0.5">
-        <span className="font-semibold">{title}</span>
+        <span className="font-condensed text-xl font-extrabold uppercase">{title}</span>
         {subtitle ? <span className="text-xs text-muted">{subtitle}</span> : null}
       </figcaption>
       {legend && legend.length > 1 ? (

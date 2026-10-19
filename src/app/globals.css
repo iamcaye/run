@@ -1,44 +1,54 @@
 @import "tailwindcss";
 
+/* "Pista": warm cinder ground, ink, track red. */
 :root {
-  --background: #fafaf9;
+  --background: #f4f1ea;
   --surface: #ffffff;
-  --foreground: #1c1917;
-  --muted: #78716c;
-  --border: #e7e5e4;
-  --accent: #ea580c;
+  --foreground: #1a1714;
+  --muted: #6b645c;
+  --border: #e4ded3;
+  --track: #ece7de;
+  --accent: #c9361a;
   --accent-foreground: #ffffff;
-  --danger: #dc2626;
-  --phase-base: #93c5fd;
-  --phase-build: #fbbf24;
-  --phase-specific: #f97316;
-  --phase-taper: #a7f3d0;
-  --phase-race: #dc2626;
-  /* Charts: categorical slots 1–2 (validated pair) + fixed status colours. */
-  --series-1: #2a78d6;
-  --series-2: #eb6834;
-  --status-good: #0ca30c;
-  --status-warning: #fab219;
-  --status-critical: #d03b3b;
+  /* Race hero block: same red in both themes, always white text. */
+  --hero: #c9361a;
+  --hero-foreground: #ffffff;
+  --danger: #c42b2b;
+  /* Phases climb in lightness-separated steps: stone → amber → track red → ink; taper eases to sage. */
+  --phase-base: #cfc6b8;
+  --phase-build: #e9a23b;
+  --phase-specific: #c9361a;
+  --phase-taper: #8fbfa4;
+  --phase-race: #1a1714;
+  /* Charts: planned in ink, run in track red, plus fixed status colours. */
+  --series-1: #1a1714;
+  --series-2: #c9361a;
+  --status-good: #1e7a34;
+  --status-warning: #b77a00;
+  --status-critical: #c42b2b;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0c0a09;
-    --surface: #1c1917;
-    --foreground: #f5f5f4;
-    --muted: #a8a29e;
-    --border: #292524;
-    --accent: #fb923c;
-    --accent-foreground: #1c1917;
+    --background: #14110f;
+    --surface: #1f1b18;
+    --foreground: #f4f1ea;
+    --muted: #a39a90;
+    --border: #332d28;
+    --track: #2a2420;
+    --accent: #f06a4a;
+    --accent-foreground: #1a1714;
     --danger: #f87171;
-    --phase-base: #1d4ed8;
-    --phase-build: #b45309;
-    --phase-specific: #ea580c;
-    --phase-taper: #047857;
-    --phase-race: #f87171;
-    --series-1: #3987e5;
-    --series-2: #d95926;
+    --phase-base: #5a5047;
+    --phase-build: #c98a2b;
+    --phase-specific: #f06a4a;
+    --phase-taper: #4e8f6e;
+    --phase-race: #f4f1ea;
+    --series-1: #f4f1ea;
+    --series-2: #f06a4a;
+    --status-good: #4ade80;
+    --status-warning: #fbbf24;
+    --status-critical: #f87171;
   }
 }
 
@@ -48,8 +58,11 @@
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-track: var(--track);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-hero: var(--hero);
+  --color-hero-foreground: var(--hero-foreground);
   --color-danger: var(--danger);
   --color-phase-base: var(--phase-base);
   --color-phase-build: var(--phase-build);
@@ -61,7 +74,8 @@
   --color-status-good: var(--status-good);
   --color-status-warning: var(--status-warning);
   --color-status-critical: var(--status-critical);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-barlow);
+  --font-condensed: var(--font-barlow-condensed);
   --font-mono: var(--font-geist-mono);
 }
 

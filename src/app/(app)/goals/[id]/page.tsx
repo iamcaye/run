@@ -33,7 +33,7 @@ export default async function GoalPage({ params }: PageProps<"/goals/[id]">) {
       </Link>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <h1 className="text-xl font-semibold">{goal.name}</h1>
+          <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">{goal.name}</h1>
           <GoalFacts goal={goal} units={settings.units} today={today} />
         </div>
         <StatusBadge status={goal.status} />

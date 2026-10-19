@@ -12,7 +12,7 @@ export default async function NewGoalPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">New goal</h1>
+      <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">New goal</h1>
       <Card>
         <GoalForm
           action={createGoalAction}

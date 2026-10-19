@@ -16,7 +16,7 @@ export default async function QuickLogPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">Quick log</h1>
+      <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">Quick log</h1>
 
       <Card title="Your latest run">
         {latest && row ? (

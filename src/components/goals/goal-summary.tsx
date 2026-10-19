@@ -13,7 +13,7 @@ const STATUS_STYLES: Record<Goal["status"], string> = {
 };
 
 export function StatusBadge({ status }: { status: Goal["status"] }) {
-  return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[status]}`}>{status}</span>;
+  return <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold tracking-wider uppercase ${STATUS_STYLES[status]}`}>{status}</span>;
 }
 
 export function formatRaceDate(date: LocalDate): string {
