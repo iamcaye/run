@@ -22,7 +22,7 @@ export default function RouteMap({ points }: { points: readonly LatLon[] }) {
       bounds={bounds}
       boundsOptions={{ padding: [16, 16] }}
       scrollWheelZoom={false}
-      className="h-64 w-full rounded-lg"
+      className="h-64 w-full rounded-lg lg:h-96"
       attributionControl
     >
       <TileLayer

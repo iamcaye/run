@@ -48,14 +48,16 @@ export default async function GoalsPage() {
           New goal
         </Link>
       </div>
-      <Card title="Current">
-        {current.length ? <ul>{current.map(row)}</ul> : <p className="text-sm text-muted">No upcoming goals. Create one to get a plan.</p>}
-      </Card>
-      {history.length ? (
-        <Card title="History">
-          <ul>{history.map(row)}</ul>
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start">
+        <Card title="Current">
+          {current.length ? <ul>{current.map(row)}</ul> : <p className="text-sm text-muted">No upcoming goals. Create one to get a plan.</p>}
         </Card>
-      ) : null}
+        {history.length ? (
+          <Card title="History">
+            <ul>{history.map(row)}</ul>
+          </Card>
+        ) : null}
+      </div>
     </div>
   );
 }
