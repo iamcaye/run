@@ -21,6 +21,9 @@ export const PHASE_LABELS: Readonly<Record<Phase, string>> = {
   race: "Race week",
 };
 
+/** Hard sessions: shown as "Quality" in the plan UI. */
+export const QUALITY_TYPES: ReadonlySet<string> = new Set(["tempo", "intervals", "race_pace", "race"]);
+
 /** Session types a user can pick when editing (the race itself is fixed). */
 export const EDITABLE_SESSION_TYPES = ["easy", "long", "tempo", "intervals", "race_pace", "strides", "rest"] as const;
 
