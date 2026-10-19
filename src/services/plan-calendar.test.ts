@@ -59,9 +59,9 @@ describe("getPlanCalendar", () => {
 
   it("places activities by the user's local date", async () => {
     const { scope, sessions } = await userWithPlan("cal-tz");
-    await scope.settings.update({ timezone: "Europe/Madrid" });
+    await scope.settings.update({ timezone: "Pacific/Auckland" });
     const tzSettings = await scope.settings.get();
-    const act = await scope.activities.upsert(run("cal-3", "2026-10-14T22:30:00Z"));
+    const act = await scope.activities.upsert(run("cal-3", "2026-10-14T12:00:00Z"));
 
     const grid = await getPlanCalendar(scope, tzSettings, sessions, month, viewToday);
     const days = allDays(grid);

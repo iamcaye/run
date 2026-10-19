@@ -40,7 +40,12 @@ export function ActivityRow({ a, units, columns = false }: { a: ActivityRowData;
           </span>
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{a.sessionType ? SESSION_LABELS[a.sessionType] : "Unplanned run"}</p>
+          <p className="truncate font-semibold">
+            {a.sessionType ? SESSION_LABELS[a.sessionType] : "Unplanned run"}
+            {columns && a.source === "manual" ? (
+              <span className="ml-2 hidden text-xs font-normal text-muted lg:inline">manual</span>
+            ) : null}
+          </p>
           <p className={`truncate text-xs text-muted tabular-nums ${columns ? "lg:hidden" : ""}`}>
             {formatDuration(a.seconds)} · {formatPace(a.seconds / a.km, units)}
             {a.avgHr ? ` · ${a.avgHr} bpm` : ""}

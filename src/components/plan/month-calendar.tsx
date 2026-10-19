@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PHASE_BG } from "@/components/plan/phase";
+import { dayLabel } from "@/components/plan/session-card";
 import { StructureBar } from "@/components/plan/structure-bar";
 import { PHASE_LABELS, SESSION_LABELS } from "@/lib/planning/describe";
 import type { Phase } from "@/lib/planning/types";
@@ -62,21 +63,22 @@ function DayCell({ day, units }: { day: CalendarDay; units: Units }) {
         {number}
         {day.isToday ? " · Today" : ""}
       </span>
-      {day.sessions.map((s) =>
-        s.type === "rest" ? (
-          <span key={s.id} className="text-xs text-muted">
-            Rest
-          </span>
-        ) : (
-          <Link key={s.id} href={`/plan/sessions/${s.id}`} className="flex flex-col gap-1">
+      {day.sessions.map((s) => {
+        if (s.type === "rest") {
+          return (
+            <Link key={s.id} href={`/plan/sessions/${s.id}`} className="text-xs text-muted">
+              Rest<span className="sr-only"> on {dayLabel(day.date)}</span>
+            </Link>
+          );
+        }
+        const body = (
+          <>
             <span className="flex items-baseline justify-between gap-1">
               <span className="text-xs font-bold">{SESSION_LABELS[s.type]}</span>
               {s.status === "done" || s.status === "missed" ? (
-                <span
-                  aria-label={s.status === "done" ? "done" : "missed"}
-                  className={`font-black ${s.status === "done" ? "text-status-good" : "text-status-warning"}`}
-                >
-                  {s.status === "done" ? "✓" : "!"}
+                <span className={`font-black ${s.status === "done" ? "text-status-good" : "text-status-warning"}`}>
+                  <span aria-hidden>{s.status === "done" ? "✓" : "!"}</span>
+                  <span className="sr-only">{s.status}</span>
                 </span>
               ) : null}
             </span>
@@ -85,12 +87,24 @@ function DayCell({ day, units }: { day: CalendarDay; units: Units }) {
               {formatDistanceValue(s.targetKm, units)}{" "}
               <small className="text-[10px] font-semibold opacity-70">{units}</small>
             </span>
+            <span className="sr-only">{dayLabel(day.date)}</span>
+          </>
+        );
+        // Race day has no edit page (it 404s), so it stays a plain block.
+        return s.type === "race" ? (
+          <div key={s.id} className="flex flex-col gap-1">
+            {body}
+          </div>
+        ) : (
+          <Link key={s.id} href={`/plan/sessions/${s.id}`} className="flex flex-col gap-1">
+            {body}
           </Link>
-        ),
-      )}
+        );
+      })}
       {day.unlinkedRuns.map((r) => (
         <Link key={r.id} href={`/activities/${r.id}`} className="text-xs text-muted hover:underline">
           Run · {formatDistanceValue(r.km, units)} {units}
+          <span className="sr-only"> on {dayLabel(day.date)}</span>
         </Link>
       ))}
     </div>

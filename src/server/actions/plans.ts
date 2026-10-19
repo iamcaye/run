@@ -45,5 +45,5 @@ export async function editSessionAction(sessionId: string, _prev: FormState, for
   if (!result.ok) return failure(result.message);
   revalidatePath("/plan");
   revalidatePath("/dashboard");
-  redirect(`/plan#${result.session.date}`);
+  redirect(`/plan?month=${result.session.date.slice(0, 7)}#${result.session.date}`);
 }

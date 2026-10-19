@@ -66,11 +66,13 @@ export function buildMonthGrid(input: {
   today: LocalDate;
   sessions: readonly { id: string; date: LocalDate; type: SessionType; targetKm: number; phase: Phase; structure: SessionStructure | null }[];
   activities: readonly Pick<MetricActivity, "id" | "localDate" | "km" | "plannedSessionId">[];
+  /** Sessions linked to an activity anywhere (the grid window only sees some activities). */
+  linkedSessionIds?: ReadonlySet<string>;
 }): MonthGrid {
-  const { month, weekStart, today, sessions, activities } = input;
+  const { month, weekStart, today, sessions, activities, linkedSessionIds } = input;
   const { from, to } = gridRange(month, weekStart);
 
-  const completed = new Set<string>();
+  const completed = new Set<string>(linkedSessionIds);
   const activitiesByDate = new Map<LocalDate, typeof activities[number][]>();
   for (const act of activities) {
     if (act.plannedSessionId) completed.add(act.plannedSessionId);

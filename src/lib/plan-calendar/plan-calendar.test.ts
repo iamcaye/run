@@ -47,6 +47,11 @@ describe("plan calendar", () => {
     expect(day(g, today).sessions[0].status).toBe("today");
   });
 
+  it("counts a session linked to an activity outside the window as done", () => {
+    const g = grid([s("e", "2026-10-07", "easy")], [], { linkedSessionIds: new Set(["e"]) });
+    expect(day(g, "2026-10-07").sessions[0].status).toBe("done");
+  });
+
   it("handles two sessions plus an unlinked run on one day", () => {
     const g = grid([s("l", "2026-10-14", "long"), s("iv", "2026-10-14", "intervals")], [a("u", "2026-10-14", 5)]);
     const d = day(g, "2026-10-14");

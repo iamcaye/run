@@ -190,7 +190,7 @@ export default async function DashboardPage() {
         ) : null}
 
         <div className="grid gap-3.5 xl:grid-cols-2">
-          <Card>
+          <Card className={d.longRuns.length === 0 ? "xl:col-span-2" : ""}>
             <AcwrChart
               // Ratios computed on less than a full 28-day window are artifacts (one week of runs = 4.0): not plotted.
               data={d.acwr.map((p) => ({ date: p.date, ratio: p.insufficientHistory ? null : p.ratio, acute: p.acute, chronic: p.chronic }))}
