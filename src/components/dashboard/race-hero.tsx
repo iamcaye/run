@@ -14,11 +14,11 @@ const PHASE_SHORT: Readonly<Record<Phase, string>> = {
   race: "Race",
 };
 
-// Profile drawing area (viewBox units); TOP leaves room for the labels above the peak.
+// Profile plot (viewBox units = px tall); TOP keeps the peak off the label strip above.
 const W = 320;
 const H = 120;
-const TOP = 22;
-const LABEL_W = 44;
+const TOP = 12;
+const LABEL_STRIP = 24;
 
 function Countdown({ daysToRace }: { daysToRace: number | null }) {
   if (daysToRace === null) return <span />;
@@ -83,7 +83,10 @@ function PredictionBlock({
   );
 }
 
-/** The plan drawn as a course profile: weekly planned km, done part solid, marker on this week. */
+/**
+ * The plan drawn as a course profile: weekly planned km, done part solid, marker on this week.
+ * The area stretches to any width; labels and the marker are HTML so they keep their size.
+ */
 function PlanProfile({ weeks, units }: { weeks: readonly ProfileWeek[]; units: Units }) {
   const n = weeks.length;
   if (n < 2) return null;
@@ -102,51 +105,62 @@ function PlanProfile({ weeks, units }: { weeks: readonly ProfileWeek[]; units: U
     `Plan profile: ${units} per week over ${n} weeks, peaking at ${peakKm} ${units} in week ${peak + 1}` +
     (current >= 0 ? `; this is week ${current + 1} (${currentKm} ${units} planned)` : "");
 
-  const markerX = current >= 0 ? pts[current]![0] : 0;
-  const labelX = Math.min(Math.max(markerX > W / 2 ? markerX - LABEL_W - 6 : markerX + 6, 0), W - LABEL_W);
+  // viewBox units map 1:1 to px vertically; the label strip sits above the plot.
+  const pct = (x: number) => (x / W) * 100;
+  const top = (y: number) => LABEL_STRIP + y;
+  const markerPct = current >= 0 ? pct(pts[current]![0]) : 0;
+  const peakPct = pct(pts[peak]![0]);
 
   return (
-    <svg role="img" aria-label={description} viewBox={`0 -10 ${W} ${H + 10}`} className="relative mt-1 block w-full overflow-visible">
-      {split >= 0 ? <path d={`M0,${H} ${line(0, split)} L${splitX.toFixed(1)},${H} Z`} fill="currentColor" /> : null}
-      {split < n - 1 ? (
-        <>
-          <path
-            d={`M${splitX.toFixed(1)},${H} ${line(Math.max(split, 0), n - 1)} L${W},${H} Z`}
-            fill="currentColor"
-            fillOpacity={0.22}
-          />
-          <path
-            d={`M${line(Math.max(split, 0), n - 1).slice(1)}`}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeDasharray="4 4"
-          />
-        </>
-      ) : null}
-      <line x1={0} y1={H} x2={W} y2={H} stroke="currentColor" strokeWidth={1.5} />
-      {peak !== current && Math.abs(peak - current) > 2 ? (
-        <text
-          x={Math.min(Math.max(pts[peak]![0], 20), W - 20)}
-          y={pts[peak]![1] - 7}
-          textAnchor="middle"
-          fill="currentColor"
-          className="font-condensed text-[13px] font-bold uppercase"
+    <div role="img" aria-label={description} className="relative mt-1" style={{ height: LABEL_STRIP + H }}>
+      <svg aria-hidden viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="absolute inset-x-0 bottom-0 block w-full" style={{ height: H }}>
+        {split >= 0 ? <path d={`M0,${H} ${line(0, split)} L${splitX.toFixed(1)},${H} Z`} fill="currentColor" /> : null}
+        {split < n - 1 ? (
+          <>
+            <path d={`M${splitX.toFixed(1)},${H} ${line(Math.max(split, 0), n - 1)} L${W},${H} Z`} fill="currentColor" fillOpacity={0.22} />
+            <path
+              d={`M${line(Math.max(split, 0), n - 1).slice(1)}`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeDasharray="4 4"
+              vectorEffect="non-scaling-stroke"
+            />
+          </>
+        ) : null}
+        <line x1={0} y1={H} x2={W} y2={H} stroke="currentColor" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+      </svg>
+      {Math.abs(peak - current) > 2 ? (
+        <span
+          aria-hidden
+          className="absolute font-condensed text-[13px] leading-none font-bold whitespace-nowrap uppercase"
+          style={{
+            left: `${peakPct}%`,
+            top: top(pts[peak]![1]) - 18,
+            transform: `translateX(${peakPct < 8 ? "0" : peakPct > 92 ? "-100%" : "-50%"})`,
+          }}
         >
           {peakKm} {units}
-        </text>
+        </span>
       ) : null}
       {current >= 0 ? (
-        <g>
-          <line x1={markerX} y1={0} x2={markerX} y2={H} stroke="#1a1714" strokeWidth={2} />
-          <circle cx={markerX} cy={pts[current]![1]} r={7} fill="#1a1714" stroke="#ffffff" strokeWidth={3} />
-          <rect x={labelX} y={-8} width={LABEL_W} height={20} rx={6} fill="#1a1714" />
-          <text x={labelX + LABEL_W / 2} y={6} textAnchor="middle" fill="#ffffff" className="font-condensed text-[13px] font-bold">
+        <>
+          <span aria-hidden className="absolute bottom-0 w-0.5 -translate-x-1/2 bg-[#1a1714]" style={{ left: `${markerPct}%`, top: 4 }} />
+          <span
+            aria-hidden
+            className="absolute size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-[#1a1714] box-content"
+            style={{ left: `${markerPct}%`, top: top(pts[current]![1]) }}
+          />
+          <span
+            aria-hidden
+            className="absolute top-0 rounded-md bg-[#1a1714] px-2 py-0.5 font-condensed text-[13px] font-bold whitespace-nowrap text-white"
+            style={markerPct > 50 ? { right: `calc(${100 - markerPct}% + 6px)` } : { left: `calc(${markerPct}% + 6px)` }}
+          >
             WK {current + 1}
-          </text>
-        </g>
+          </span>
+        </>
       ) : null}
-    </svg>
+    </div>
   );
 }
 
