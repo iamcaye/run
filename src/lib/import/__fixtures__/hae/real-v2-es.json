@@ -1,0 +1,1796 @@
+{
+  "data": {
+    "workouts": [
+      {
+        "id": "61E3C40C-35FC-44FF-8D13-05C1E1993799",
+        "end": "2026-10-03 17:15:38 +0200",
+        "name": "Entrenamiento de Fuerza Tradicional",
+        "start": "2026-10-03 16:41:57 +0200",
+        "source": {
+          "name": "Apple Watch",
+          "identifier": "com.apple.health.00000000-0000-0000-0000-000000000000"
+        },
+        "duration": 2020.744686,
+        "humidity": {
+          "qty": 64,
+          "units": "%"
+        },
+        "metadata": {},
+        "heartRate": {
+          "avg": {
+            "qty": 94.848409,
+            "units": "count/min"
+          },
+          "max": {
+            "qty": 121,
+            "units": "count/min"
+          },
+          "min": {
+            "qty": 78,
+            "units": "count/min"
+          }
+        },
+        "intensity": {
+          "qty": 2.33744,
+          "units": "kcal/hr·kg"
+        },
+        "stepCount": [
+          {
+            "qty": 6.667653,
+            "date": "2026-10-03 16:47:00 +0200",
+            "units": "count",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 0.875219,
+            "date": "2026-10-03 16:57:00 +0200",
+            "units": "count",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 53.133347,
+            "date": "2026-10-03 17:07:00 +0200",
+            "units": "count",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 3.763194,
+            "date": "2026-10-03 17:16:00 +0200",
+            "units": "count",
+            "source": "Apple Watch|iPhone"
+          }
+        ],
+        "activities": [
+          {
+            "id": "61E3C40C-35FC-44FF-8D13-05C1E1993799",
+            "end": "2026-10-03 17:15:38 +0200",
+            "index": 1,
+            "start": "2026-10-03 16:41:57 +0200",
+            "metrics": {
+              "activeEnergy": {
+                "qty": 188.338601,
+                "units": "kcal",
+                "origin": "activityStatistics"
+              },
+              "heartRateAverage": {
+                "qty": 94.848409,
+                "units": "bpm",
+                "origin": "activityStatistics"
+              },
+              "heartRateMaximum": {
+                "qty": 121,
+                "units": "bpm",
+                "origin": "activityStatistics"
+              },
+              "heartRateMinimum": {
+                "qty": 78,
+                "units": "bpm",
+                "origin": "activityStatistics"
+              }
+            },
+            "duration": 2020.744686,
+            "activityType": "traditional_strength_training",
+            "boundaryKind": "interval",
+            "configuration": {
+              "swimmingLocationType": "unknown"
+            },
+            "activeDuration": 2020.744686,
+            "boundaryOrigin": "recordedActivity",
+            "elapsedDuration": 2020.744686,
+            "activityTypeCode": 50
+          }
+        ],
+        "basalEnergy": [
+          {
+            "qty": 6.927653,
+            "date": "2026-10-03 16:41:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 8.335193,
+            "date": "2026-10-03 16:53:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 8.983119,
+            "date": "2026-10-03 17:05:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 6.339379,
+            "date": "2026-10-03 17:16:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          }
+        ],
+        "stepCadence": {
+          "qty": 17.43818,
+          "units": "count/min"
+        },
+        "temperature": {
+          "qty": 27.160128,
+          "units": "degC"
+        },
+        "totalEnergy": {
+          "qty": 1098.249393,
+          "units": "kJ"
+        },
+        "activeEnergy": [
+          {
+            "qty": 6.039648,
+            "date": "2026-10-03 16:41:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 24.580503,
+            "date": "2026-10-03 16:53:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 22.16487,
+            "date": "2026-10-03 17:05:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 3.208834,
+            "date": "2026-10-03 17:16:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          }
+        ],
+        "avgHeartRate": {
+          "qty": 94.848409,
+          "units": "count/min"
+        },
+        "maxHeartRate": {
+          "qty": 121,
+          "units": "count/min"
+        },
+        "heartRateData": [
+          {
+            "Avg": 83,
+            "Max": 83,
+            "Min": 83,
+            "date": "2026-10-03 16:41:00 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 91.692308,
+            "Max": 98,
+            "Min": 86,
+            "date": "2026-10-03 16:52:00 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 94.833333,
+            "Max": 98,
+            "Min": 93,
+            "date": "2026-10-03 17:04:00 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 88.714286,
+            "Max": 94,
+            "Min": 83,
+            "date": "2026-10-03 17:15:00 +0200",
+            "units": "count/min"
+          }
+        ],
+        "heartRateRecovery": [
+          {
+            "Avg": 88,
+            "Max": 88,
+            "Min": 88,
+            "date": "2026-10-03 17:15:38 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 78,
+            "Max": 78,
+            "Min": 78,
+            "date": "2026-10-03 17:16:18 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 80,
+            "Max": 80,
+            "Min": 80,
+            "date": "2026-10-03 17:16:59 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 85,
+            "Max": 85,
+            "Min": 85,
+            "date": "2026-10-03 17:17:37 +0200",
+            "units": "count/min"
+          }
+        ],
+        "activeEnergyBurned": {
+          "qty": 788.008705,
+          "units": "kJ"
+        }
+      },
+      {
+        "id": "EFF86E32-9F5B-4A4C-B565-BC65DE3D821B",
+        "end": "2026-10-03 12:20:00 +0200",
+        "name": "Exterior Ejecutar",
+        "route": [
+          {
+            "speed": 1.236829,
+            "course": 269.7535,
+            "altitude": 6.701913,
+            "latitude": 40.4168,
+            "longitude": -3.7038,
+            "timestamp": "2026-10-03 11:47:19 +0200",
+            "speedAccuracy": 0.297659,
+            "courseAccuracy": 14.987065,
+            "verticalAccuracy": 1.442484,
+            "horizontalAccuracy": 1.727952
+          },
+          {
+            "speed": 2.615829,
+            "course": 263.603504,
+            "altitude": 5.044465,
+            "latitude": 40.415065,
+            "longitude": -3.721564,
+            "timestamp": "2026-10-03 11:58:13 +0200",
+            "speedAccuracy": 0.509902,
+            "courseAccuracy": 12.639714,
+            "verticalAccuracy": 0.690283,
+            "horizontalAccuracy": 1.168575
+          },
+          {
+            "speed": 1.235823,
+            "course": 95.332298,
+            "altitude": 6.483941,
+            "latitude": 40.415889,
+            "longitude": -3.713907,
+            "timestamp": "2026-10-03 12:09:07 +0200",
+            "speedAccuracy": 0.453773,
+            "courseAccuracy": 24.376022,
+            "verticalAccuracy": 0.690286,
+            "horizontalAccuracy": 1.176545
+          },
+          {
+            "speed": 1.275763,
+            "course": 92.998071,
+            "altitude": 3.132629,
+            "latitude": 40.416857,
+            "longitude": -3.700973,
+            "timestamp": "2026-10-03 12:20:00 +0200",
+            "speedAccuracy": 0.681342,
+            "courseAccuracy": 30.599764,
+            "verticalAccuracy": 1.494529,
+            "horizontalAccuracy": 1.696196
+          }
+        ],
+        "speed": {
+          "qty": 7.725851,
+          "units": "km/hr"
+        },
+        "start": "2026-10-03 11:47:18 +0200",
+        "events": [
+          {
+            "end": "2026-10-03 11:53:52 +0200",
+            "type": "segment",
+            "index": 1,
+            "start": "2026-10-03 11:47:18 +0200",
+            "typeCode": 7,
+            "boundaryKind": "interval",
+            "boundaryOrigin": "recordedEvent"
+          },
+          {
+            "end": "2026-10-03 12:00:51 +0200",
+            "type": "segment",
+            "index": 3,
+            "start": "2026-10-03 11:53:52 +0200",
+            "typeCode": 7,
+            "boundaryKind": "interval",
+            "boundaryOrigin": "recordedEvent"
+          },
+          {
+            "end": "2026-10-03 12:16:55 +0200",
+            "type": "segment",
+            "index": 6,
+            "start": "2026-10-03 12:08:38 +0200",
+            "typeCode": 7,
+            "boundaryKind": "interval",
+            "boundaryOrigin": "recordedEvent"
+          },
+          {
+            "end": "2026-10-03 12:19:56 +0200",
+            "type": "segment",
+            "index": 8,
+            "start": "2026-10-03 12:16:55 +0200",
+            "typeCode": 7,
+            "boundaryKind": "interval",
+            "boundaryOrigin": "recordedEvent"
+          }
+        ],
+        "source": {
+          "name": "Apple Watch",
+          "identifier": "com.apple.health.00000000-0000-0000-0000-000000000000"
+        },
+        "splits": [
+          {
+            "items": [
+              {
+                "end": "2026-10-03 11:53:52 +0200",
+                "index": 1,
+                "start": "2026-10-03 11:47:18 +0200",
+                "metrics": {
+                  "speed": {
+                    "qty": 2.533335,
+                    "units": "m/s",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "distance": {
+                    "qty": 1000,
+                    "units": "m",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 394.73665
+                  },
+                  "paceMile": {
+                    "qty": 635.267059,
+                    "units": "s/mi",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "activeEnergy": {
+                    "qty": 86.006626,
+                    "units": "kcal",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 394.73665
+                  },
+                  "paceKilometre": {
+                    "qty": 394.73665,
+                    "units": "s/km",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "heartRateAverage": {
+                    "qty": 141.4,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 75
+                  },
+                  "heartRateMaximum": {
+                    "qty": 150,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 75
+                  },
+                  "heartRateMinimum": {
+                    "qty": 93,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 75
+                  }
+                },
+                "isPartial": false,
+                "boundaryKind": "interval",
+                "activeDuration": 394.73665,
+                "boundaryOrigin": "distanceInterpolation",
+                "elapsedDuration": 394.73665
+              },
+              {
+                "end": "2026-10-03 12:00:51 +0200",
+                "index": 2,
+                "start": "2026-10-03 11:53:52 +0200",
+                "metrics": {
+                  "speed": {
+                    "qty": 2.388794,
+                    "units": "m/s",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "distance": {
+                    "qty": 1000,
+                    "units": "m",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 418.621273
+                  },
+                  "paceMile": {
+                    "qty": 673.705633,
+                    "units": "s/mi",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "activeEnergy": {
+                    "qty": 84.743064,
+                    "units": "kcal",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 418.621273
+                  },
+                  "paceKilometre": {
+                    "qty": 418.621273,
+                    "units": "s/km",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "heartRateAverage": {
+                    "qty": 151.084337,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 83
+                  },
+                  "heartRateMaximum": {
+                    "qty": 155,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 83
+                  },
+                  "heartRateMinimum": {
+                    "qty": 143,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 83
+                  }
+                },
+                "isPartial": false,
+                "boundaryKind": "interval",
+                "activeDuration": 418.621273,
+                "boundaryOrigin": "distanceInterpolation",
+                "elapsedDuration": 418.621273
+              },
+              {
+                "end": "2026-10-03 12:16:55 +0200",
+                "index": 4,
+                "start": "2026-10-03 12:08:38 +0200",
+                "metrics": {
+                  "speed": {
+                    "qty": 2.010944,
+                    "units": "m/s",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "distance": {
+                    "qty": 1000,
+                    "units": "m",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 494.707875
+                  },
+                  "paceMile": {
+                    "qty": 800.292931,
+                    "units": "s/mi",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "activeEnergy": {
+                    "qty": 86.383853,
+                    "units": "kcal",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 497.278973
+                  },
+                  "paceKilometre": {
+                    "qty": 497.278973,
+                    "units": "s/km",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "heartRateAverage": {
+                    "qty": 137.319588,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 97
+                  },
+                  "heartRateMaximum": {
+                    "qty": 163,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 97
+                  },
+                  "heartRateMinimum": {
+                    "qty": 106,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 97
+                  }
+                },
+                "isPartial": false,
+                "boundaryKind": "interval",
+                "activeDuration": 497.278973,
+                "boundaryOrigin": "distanceInterpolation",
+                "elapsedDuration": 497.278973
+              },
+              {
+                "end": "2026-10-03 12:20:00 +0200",
+                "index": 5,
+                "start": "2026-10-03 12:16:55 +0200",
+                "metrics": {
+                  "speed": {
+                    "qty": 1.141794,
+                    "units": "m/s",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "distance": {
+                    "qty": 210.878634,
+                    "units": "m",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 180.467639
+                  },
+                  "paceMile": {
+                    "qty": 1409.486895,
+                    "units": "s/mi",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "activeEnergy": {
+                    "qty": 16.708449,
+                    "units": "kcal",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 177.896506
+                  },
+                  "paceKilometre": {
+                    "qty": 875.814552,
+                    "units": "s/km",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "heartRateAverage": {
+                    "qty": 121.081081,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 37
+                  },
+                  "heartRateMaximum": {
+                    "qty": 155,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 37
+                  },
+                  "heartRateMinimum": {
+                    "qty": 105,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 37
+                  }
+                },
+                "isPartial": true,
+                "boundaryKind": "interval",
+                "activeDuration": 184.690577,
+                "boundaryOrigin": "distanceInterpolation",
+                "elapsedDuration": 184.690577
+              }
+            ],
+            "distanceType": "walkingRunning",
+            "boundaryOrigin": "distanceInterpolation",
+            "targetDistance": {
+              "qty": 1,
+              "units": "km"
+            }
+          },
+          {
+            "items": [
+              {
+                "end": "2026-10-03 11:58:10 +0200",
+                "index": 1,
+                "start": "2026-10-03 11:47:18 +0200",
+                "metrics": {
+                  "speed": {
+                    "qty": 2.468963,
+                    "units": "m/s",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "distance": {
+                    "qty": 1609.344,
+                    "units": "m",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 651.829982
+                  },
+                  "paceMile": {
+                    "qty": 651.829982,
+                    "units": "s/mi",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "activeEnergy": {
+                    "qty": 137.395575,
+                    "units": "kcal",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 651.829982
+                  },
+                  "paceKilometre": {
+                    "qty": 405.028373,
+                    "units": "s/km",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "heartRateAverage": {
+                    "qty": 144.648,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 125
+                  },
+                  "heartRateMaximum": {
+                    "qty": 153,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 125
+                  },
+                  "heartRateMinimum": {
+                    "qty": 93,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 125
+                  }
+                },
+                "isPartial": false,
+                "boundaryKind": "interval",
+                "activeDuration": 651.829982,
+                "boundaryOrigin": "distanceInterpolation",
+                "elapsedDuration": 651.829982
+              },
+              {
+                "end": "2026-10-03 12:11:25 +0200",
+                "index": 2,
+                "start": "2026-10-03 11:58:10 +0200",
+                "metrics": {
+                  "speed": {
+                    "qty": 2.024186,
+                    "units": "m/s",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "distance": {
+                    "qty": 1609.344,
+                    "units": "m",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 792.486439
+                  },
+                  "paceMile": {
+                    "qty": 795.057537,
+                    "units": "s/mi",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "activeEnergy": {
+                    "qty": 136.995932,
+                    "units": "kcal",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 795.057537
+                  },
+                  "paceKilometre": {
+                    "qty": 494.025849,
+                    "units": "s/km",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "heartRateAverage": {
+                    "qty": 138.91195,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 159
+                  },
+                  "heartRateMaximum": {
+                    "qty": 160,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 159
+                  },
+                  "heartRateMinimum": {
+                    "qty": 105,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 159
+                  }
+                },
+                "isPartial": false,
+                "boundaryKind": "interval",
+                "activeDuration": 795.057537,
+                "boundaryOrigin": "distanceInterpolation",
+                "elapsedDuration": 795.057537
+              },
+              {
+                "end": "2026-10-03 12:20:00 +0200",
+                "index": 3,
+                "start": "2026-10-03 12:11:25 +0200",
+                "metrics": {
+                  "speed": {
+                    "qty": 1.925658,
+                    "units": "m/s",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "distance": {
+                    "qty": 992.190634,
+                    "units": "m",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 511.024673
+                  },
+                  "paceMile": {
+                    "qty": 835.737228,
+                    "units": "s/mi",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "activeEnergy": {
+                    "qty": 84.558741,
+                    "units": "kcal",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 508.45354
+                  },
+                  "paceKilometre": {
+                    "qty": 519.303038,
+                    "units": "s/km",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "heartRateAverage": {
+                    "qty": 134.762376,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 101
+                  },
+                  "heartRateMaximum": {
+                    "qty": 163,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 101
+                  },
+                  "heartRateMinimum": {
+                    "qty": 105,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 101
+                  }
+                },
+                "isPartial": true,
+                "boundaryKind": "interval",
+                "activeDuration": 515.247611,
+                "boundaryOrigin": "distanceInterpolation",
+                "elapsedDuration": 515.247611
+              }
+            ],
+            "distanceType": "walkingRunning",
+            "boundaryOrigin": "distanceInterpolation",
+            "targetDistance": {
+              "qty": 1,
+              "units": "mi"
+            }
+          }
+        ],
+        "avgSpeed": {
+          "qty": 7.715858,
+          "units": "km"
+        },
+        "distance": {
+          "qty": 4.210879,
+          "units": "km"
+        },
+        "duration": 1962.135129,
+        "humidity": {
+          "qty": 74,
+          "units": "%"
+        },
+        "isIndoor": false,
+        "location": "Exterior",
+        "maxSpeed": {
+          "qty": 14.890164,
+          "units": "km"
+        },
+        "metadata": {},
+        "segments": [
+          {
+            "end": "2026-10-03 11:53:52 +0200",
+            "index": 1,
+            "start": "2026-10-03 11:47:18 +0200",
+            "metrics": {
+              "speed": {
+                "qty": 2.533335,
+                "units": "m/s",
+                "origin": "activeTimeCalculation"
+              },
+              "distance": {
+                "qty": 1000.0,
+                "units": "m",
+                "origin": "sampleOverlapEstimate",
+                "coveredDuration": 394.73665
+              },
+              "paceMile": {
+                "qty": 635.267059,
+                "units": "s/mi",
+                "origin": "activeTimeCalculation"
+              },
+              "activeEnergy": {
+                "qty": 86.006626,
+                "units": "kcal",
+                "origin": "sampleOverlapEstimate",
+                "coveredDuration": 394.73665
+              },
+              "paceKilometre": {
+                "qty": 394.73665,
+                "units": "s/km",
+                "origin": "activeTimeCalculation"
+              },
+              "heartRateAverage": {
+                "qty": 141.4,
+                "units": "bpm",
+                "origin": "sampleSummary",
+                "sampleCount": 75
+              },
+              "heartRateMaximum": {
+                "qty": 150,
+                "units": "bpm",
+                "origin": "sampleSummary",
+                "sampleCount": 75
+              },
+              "heartRateMinimum": {
+                "qty": 93,
+                "units": "bpm",
+                "origin": "sampleSummary",
+                "sampleCount": 75
+              }
+            },
+            "eventIndex": 1,
+            "boundaryKind": "interval",
+            "activeDuration": 394.73665,
+            "boundaryOrigin": "recordedEvent",
+            "elapsedDuration": 394.73665
+          },
+          {
+            "end": "2026-10-03 12:00:51 +0200",
+            "index": 3,
+            "start": "2026-10-03 11:53:52 +0200",
+            "metrics": {
+              "speed": {
+                "qty": 2.388794,
+                "units": "m/s",
+                "origin": "activeTimeCalculation"
+              },
+              "distance": {
+                "qty": 1000.0,
+                "units": "m",
+                "origin": "sampleOverlapEstimate",
+                "coveredDuration": 418.621273
+              },
+              "paceMile": {
+                "qty": 673.705633,
+                "units": "s/mi",
+                "origin": "activeTimeCalculation"
+              },
+              "activeEnergy": {
+                "qty": 84.743064,
+                "units": "kcal",
+                "origin": "sampleOverlapEstimate",
+                "coveredDuration": 418.621273
+              },
+              "paceKilometre": {
+                "qty": 418.621273,
+                "units": "s/km",
+                "origin": "activeTimeCalculation"
+              },
+              "heartRateAverage": {
+                "qty": 151.084337,
+                "units": "bpm",
+                "origin": "sampleSummary",
+                "sampleCount": 83
+              },
+              "heartRateMaximum": {
+                "qty": 155,
+                "units": "bpm",
+                "origin": "sampleSummary",
+                "sampleCount": 83
+              },
+              "heartRateMinimum": {
+                "qty": 143,
+                "units": "bpm",
+                "origin": "sampleSummary",
+                "sampleCount": 83
+              }
+            },
+            "eventIndex": 3,
+            "boundaryKind": "interval",
+            "activeDuration": 418.621273,
+            "boundaryOrigin": "recordedEvent",
+            "elapsedDuration": 418.621273
+          },
+          {
+            "end": "2026-10-03 12:16:55 +0200",
+            "index": 6,
+            "start": "2026-10-03 12:08:38 +0200",
+            "metrics": {
+              "speed": {
+                "qty": 2.010944,
+                "units": "m/s",
+                "origin": "activeTimeCalculation"
+              },
+              "distance": {
+                "qty": 1000.0,
+                "units": "m",
+                "origin": "sampleOverlapEstimate",
+                "coveredDuration": 494.707875
+              },
+              "paceMile": {
+                "qty": 800.292931,
+                "units": "s/mi",
+                "origin": "activeTimeCalculation"
+              },
+              "activeEnergy": {
+                "qty": 86.383853,
+                "units": "kcal",
+                "origin": "sampleOverlapEstimate",
+                "coveredDuration": 497.278973
+              },
+              "paceKilometre": {
+                "qty": 497.278973,
+                "units": "s/km",
+                "origin": "activeTimeCalculation"
+              },
+              "heartRateAverage": {
+                "qty": 137.319588,
+                "units": "bpm",
+                "origin": "sampleSummary",
+                "sampleCount": 97
+              },
+              "heartRateMaximum": {
+                "qty": 163,
+                "units": "bpm",
+                "origin": "sampleSummary",
+                "sampleCount": 97
+              },
+              "heartRateMinimum": {
+                "qty": 106,
+                "units": "bpm",
+                "origin": "sampleSummary",
+                "sampleCount": 97
+              }
+            },
+            "eventIndex": 6,
+            "boundaryKind": "interval",
+            "activeDuration": 497.278973,
+            "boundaryOrigin": "recordedEvent",
+            "elapsedDuration": 497.278973
+          },
+          {
+            "end": "2026-10-03 12:19:56 +0200",
+            "index": 8,
+            "start": "2026-10-03 12:16:55 +0200",
+            "metrics": {
+              "speed": {
+                "qty": 1.168512,
+                "units": "m/s",
+                "origin": "activeTimeCalculation"
+              },
+              "distance": {
+                "qty": 210.878634,
+                "units": "m",
+                "origin": "sampleOverlapEstimate",
+                "coveredDuration": 180.467639
+              },
+              "paceMile": {
+                "qty": 1377.259073,
+                "units": "s/mi",
+                "origin": "activeTimeCalculation"
+              },
+              "activeEnergy": {
+                "qty": 16.708449,
+                "units": "kcal",
+                "origin": "sampleOverlapEstimate",
+                "coveredDuration": 177.896506
+              },
+              "paceKilometre": {
+                "qty": 855.789112,
+                "units": "s/km",
+                "origin": "activeTimeCalculation"
+              },
+              "heartRateAverage": {
+                "qty": 121.081081,
+                "units": "bpm",
+                "origin": "sampleSummary",
+                "sampleCount": 37
+              },
+              "heartRateMaximum": {
+                "qty": 155,
+                "units": "bpm",
+                "origin": "sampleSummary",
+                "sampleCount": 37
+              },
+              "heartRateMinimum": {
+                "qty": 105,
+                "units": "bpm",
+                "origin": "sampleSummary",
+                "sampleCount": 37
+              }
+            },
+            "eventIndex": 8,
+            "boundaryKind": "interval",
+            "activeDuration": 180.467639,
+            "boundaryOrigin": "recordedEvent",
+            "elapsedDuration": 180.467639
+          }
+        ],
+        "heartRate": {
+          "avg": {
+            "qty": 139.025818,
+            "units": "count/min"
+          },
+          "max": {
+            "qty": 163,
+            "units": "count/min"
+          },
+          "min": {
+            "qty": 93,
+            "units": "count/min"
+          }
+        },
+        "intensity": {
+          "qty": 7.947304,
+          "units": "kcal/hr·kg"
+        },
+        "stepCount": [
+          {
+            "qty": 128.060175,
+            "date": "2026-10-03 11:47:00 +0200",
+            "units": "count",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 151.369171,
+            "date": "2026-10-03 11:58:00 +0200",
+            "units": "count",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 106.199068,
+            "date": "2026-10-03 12:10:00 +0200",
+            "units": "count",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 8.814499,
+            "date": "2026-10-03 12:21:00 +0200",
+            "units": "count",
+            "source": "Apple Watch|iPhone"
+          }
+        ],
+        "activities": [
+          {
+            "id": "EFF86E32-9F5B-4A4C-B565-BC65DE3D821B",
+            "end": "2026-10-03 12:20:00 +0200",
+            "index": 1,
+            "start": "2026-10-03 11:47:18 +0200",
+            "metrics": {
+              "speed": {
+                "qty": 2.14607,
+                "units": "m/s",
+                "origin": "activeTimeCalculation"
+              },
+              "distance": {
+                "qty": 4210.878634,
+                "units": "m",
+                "origin": "activityStatistics"
+              },
+              "paceMile": {
+                "qty": 749.902971,
+                "units": "s/mi",
+                "origin": "activeTimeCalculation"
+              },
+              "activeEnergy": {
+                "qty": 358.950248,
+                "units": "kcal",
+                "origin": "activityStatistics"
+              },
+              "paceKilometre": {
+                "qty": 465.968103,
+                "units": "s/km",
+                "origin": "activeTimeCalculation"
+              },
+              "heartRateAverage": {
+                "qty": 139.025818,
+                "units": "bpm",
+                "origin": "activityStatistics"
+              },
+              "heartRateMaximum": {
+                "qty": 163,
+                "units": "bpm",
+                "origin": "activityStatistics"
+              },
+              "heartRateMinimum": {
+                "qty": 93,
+                "units": "bpm",
+                "origin": "activityStatistics"
+              }
+            },
+            "duration": 1962.135129,
+            "activityType": "running",
+            "boundaryKind": "interval",
+            "configuration": {
+              "locationType": "outdoor",
+              "swimmingLocationType": "unknown"
+            },
+            "activeDuration": 1962.135129,
+            "boundaryOrigin": "recordedActivity",
+            "elapsedDuration": 1962.135129,
+            "activityTypeCode": 37
+          }
+        ],
+        "basalEnergy": [
+          {
+            "qty": 8.361746,
+            "date": "2026-10-03 11:47:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 8.983624,
+            "date": "2026-10-03 11:58:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 8.982823,
+            "date": "2026-10-03 12:10:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 8.735138,
+            "date": "2026-10-03 12:21:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          }
+        ],
+        "elevationUp": {
+          "qty": 8.25,
+          "units": "m"
+        },
+        "stepCadence": {
+          "qty": 141.702779,
+          "units": "count/min"
+        },
+        "temperature": {
+          "qty": 24.843576,
+          "units": "degC"
+        },
+        "totalEnergy": {
+          "qty": 1815.122447,
+          "units": "kJ"
+        },
+        "activeEnergy": [
+          {
+            "qty": 39.783009,
+            "date": "2026-10-03 11:47:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 51.404998,
+            "date": "2026-10-03 11:58:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 24.362085,
+            "date": "2026-10-03 12:10:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 15.420826,
+            "date": "2026-10-03 12:21:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          }
+        ],
+        "avgHeartRate": {
+          "qty": 139.025818,
+          "units": "count/min"
+        },
+        "maxHeartRate": {
+          "qty": 163,
+          "units": "count/min"
+        },
+        "heartRateData": [
+          {
+            "Avg": 105.5,
+            "Max": 120,
+            "Min": 93,
+            "date": "2026-10-03 11:47:00 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 152,
+            "Max": 154,
+            "Min": 149,
+            "date": "2026-10-03 11:58:00 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 134.846154,
+            "Max": 150,
+            "Min": 122,
+            "date": "2026-10-03 12:09:00 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 107.083333,
+            "Max": 111,
+            "Min": 105,
+            "date": "2026-10-03 12:19:00 +0200",
+            "units": "count/min"
+          }
+        ],
+        "heartRateRecovery": [
+          {
+            "Avg": 106,
+            "Max": 106,
+            "Min": 106,
+            "date": "2026-10-03 12:20:00 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 102,
+            "Max": 102,
+            "Min": 102,
+            "date": "2026-10-03 12:20:43 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 104,
+            "Max": 104,
+            "Min": 104,
+            "date": "2026-10-03 12:21:23 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 107,
+            "Max": 107,
+            "Min": 107,
+            "date": "2026-10-03 12:21:55 +0200",
+            "units": "count/min"
+          }
+        ],
+        "activeEnergyBurned": {
+          "qty": 1501.847838,
+          "units": "kJ"
+        },
+        "estimatedEffortScore": {
+          "qty": 5,
+          "units": "appleEffortScore"
+        },
+        "walkingAndRunningDistance": [
+          {
+            "qty": 0.131459,
+            "date": "2026-10-03 11:47:00 +0200",
+            "units": "km",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 0.150827,
+            "date": "2026-10-03 11:58:00 +0200",
+            "units": "km",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 0.077033,
+            "date": "2026-10-03 12:10:00 +0200",
+            "units": "km",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 0.006188,
+            "date": "2026-10-03 12:21:00 +0200",
+            "units": "km",
+            "source": "Apple Watch|iPhone"
+          }
+        ]
+      },
+      {
+        "id": "02AED4CA-C886-4505-BCD8-E49BA2AF8C36",
+        "end": "2026-10-03 11:47:15 +0200",
+        "name": "Exterior Caminar",
+        "route": [
+          {
+            "speed": 1.162575,
+            "course": 264.617992,
+            "altitude": 5.516558,
+            "latitude": 40.416483,
+            "longitude": -3.69759,
+            "timestamp": "2026-10-03 11:40:01 +0200",
+            "speedAccuracy": 0.295111,
+            "courseAccuracy": 19.847998,
+            "verticalAccuracy": 1.442493,
+            "horizontalAccuracy": 1.630656
+          },
+          {
+            "speed": 1.420887,
+            "course": 282.498686,
+            "altitude": 3.84737,
+            "latitude": 40.416803,
+            "longitude": -3.699657,
+            "timestamp": "2026-10-03 11:42:26 +0200",
+            "speedAccuracy": 0.488548,
+            "courseAccuracy": 19.805939,
+            "verticalAccuracy": 0.690281,
+            "horizontalAccuracy": 1.166619
+          },
+          {
+            "speed": 1.120166,
+            "course": 272.719228,
+            "altitude": 4.097158,
+            "latitude": 40.416835,
+            "longitude": -3.701722,
+            "timestamp": "2026-10-03 11:44:51 +0200",
+            "speedAccuracy": 0.527323,
+            "courseAccuracy": 27.102428,
+            "verticalAccuracy": 0.690284,
+            "horizontalAccuracy": 1.145619
+          },
+          {
+            "speed": 0.980881,
+            "course": 252.54625,
+            "altitude": 2.183342,
+            "latitude": 40.416806,
+            "longitude": -3.703718,
+            "timestamp": "2026-10-03 11:47:15 +0200",
+            "speedAccuracy": 0.692088,
+            "courseAccuracy": 40.435944,
+            "verticalAccuracy": 1.43683,
+            "horizontalAccuracy": 1.622415
+          }
+        ],
+        "speed": {
+          "qty": 4.583617,
+          "units": "km/hr"
+        },
+        "start": "2026-10-03 11:40:00 +0200",
+        "events": [
+          {
+            "end": "2026-10-03 11:47:15 +0200",
+            "type": "pause",
+            "index": 1,
+            "start": "2026-10-03 11:47:15 +0200",
+            "typeCode": 1,
+            "boundaryKind": "point",
+            "boundaryOrigin": "recordedEvent"
+          }
+        ],
+        "source": {
+          "name": "Apple Watch",
+          "identifier": "com.apple.health.00000000-0000-0000-0000-000000000000"
+        },
+        "splits": [
+          {
+            "items": [
+              {
+                "end": "2026-10-03 11:47:15 +0200",
+                "index": 1,
+                "start": "2026-10-03 11:40:00 +0200",
+                "metrics": {
+                  "speed": {
+                    "qty": 1.273227,
+                    "units": "m/s",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "distance": {
+                    "qty": 553.371135,
+                    "units": "m",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 429.379117
+                  },
+                  "paceMile": {
+                    "qty": 1263.988249,
+                    "units": "s/mi",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "activeEnergy": {
+                    "qty": 33.719186,
+                    "units": "kcal",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 433.490625
+                  },
+                  "paceKilometre": {
+                    "qty": 785.405885,
+                    "units": "s/km",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "heartRateAverage": {
+                    "qty": 86.011628,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 86
+                  },
+                  "heartRateMaximum": {
+                    "qty": 92,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 86
+                  },
+                  "heartRateMinimum": {
+                    "qty": 81,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 86
+                  }
+                },
+                "isPartial": true,
+                "boundaryKind": "interval",
+                "activeDuration": 434.620946,
+                "boundaryOrigin": "distanceInterpolation",
+                "elapsedDuration": 434.620946
+              }
+            ],
+            "distanceType": "walkingRunning",
+            "boundaryOrigin": "distanceInterpolation",
+            "targetDistance": {
+              "qty": 1,
+              "units": "km"
+            }
+          },
+          {
+            "items": [
+              {
+                "end": "2026-10-03 11:47:15 +0200",
+                "index": 1,
+                "start": "2026-10-03 11:40:00 +0200",
+                "metrics": {
+                  "speed": {
+                    "qty": 1.273227,
+                    "units": "m/s",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "distance": {
+                    "qty": 553.371135,
+                    "units": "m",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 429.379117
+                  },
+                  "paceMile": {
+                    "qty": 1263.988249,
+                    "units": "s/mi",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "activeEnergy": {
+                    "qty": 33.719186,
+                    "units": "kcal",
+                    "origin": "sampleOverlapEstimate",
+                    "coveredDuration": 433.490625
+                  },
+                  "paceKilometre": {
+                    "qty": 785.405885,
+                    "units": "s/km",
+                    "origin": "activeTimeCalculation"
+                  },
+                  "heartRateAverage": {
+                    "qty": 86.011628,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 86
+                  },
+                  "heartRateMaximum": {
+                    "qty": 92,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 86
+                  },
+                  "heartRateMinimum": {
+                    "qty": 81,
+                    "units": "bpm",
+                    "origin": "sampleSummary",
+                    "sampleCount": 86
+                  }
+                },
+                "isPartial": true,
+                "boundaryKind": "interval",
+                "activeDuration": 434.620946,
+                "boundaryOrigin": "distanceInterpolation",
+                "elapsedDuration": 434.620946
+              }
+            ],
+            "distanceType": "walkingRunning",
+            "boundaryOrigin": "distanceInterpolation",
+            "targetDistance": {
+              "qty": 1,
+              "units": "mi"
+            }
+          }
+        ],
+        "avgSpeed": {
+          "qty": 4.59296,
+          "units": "km"
+        },
+        "distance": {
+          "qty": 0.553371,
+          "units": "km"
+        },
+        "duration": 434.620946,
+        "humidity": {
+          "qty": 74,
+          "units": "%"
+        },
+        "isIndoor": false,
+        "location": "Exterior",
+        "maxSpeed": {
+          "qty": 5.743132,
+          "units": "km"
+        },
+        "metadata": {},
+        "heartRate": {
+          "avg": {
+            "qty": 86.294391,
+            "units": "count/min"
+          },
+          "max": {
+            "qty": 92,
+            "units": "count/min"
+          },
+          "min": {
+            "qty": 81,
+            "units": "count/min"
+          }
+        },
+        "intensity": {
+          "qty": 4.102971,
+          "units": "kcal/hr·kg"
+        },
+        "stepCount": [
+          {
+            "qty": 45.897128,
+            "date": "2026-10-03 11:43:00 +0200",
+            "units": "count",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 105.344307,
+            "date": "2026-10-03 11:45:00 +0200",
+            "units": "count",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 131.121316,
+            "date": "2026-10-03 11:47:00 +0200",
+            "units": "count",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 1.939825,
+            "date": "2026-10-03 11:48:00 +0200",
+            "units": "count",
+            "source": "Apple Watch|iPhone"
+          }
+        ],
+        "activities": [
+          {
+            "id": "02AED4CA-C886-4505-BCD8-E49BA2AF8C36",
+            "end": "2026-10-03 11:47:15 +0200",
+            "index": 1,
+            "start": "2026-10-03 11:40:00 +0200",
+            "metrics": {
+              "speed": {
+                "qty": 1.273227,
+                "units": "m/s",
+                "origin": "activeTimeCalculation"
+              },
+              "distance": {
+                "qty": 553.371135,
+                "units": "m",
+                "origin": "activityStatistics"
+              },
+              "paceMile": {
+                "qty": 1263.988249,
+                "units": "s/mi",
+                "origin": "activeTimeCalculation"
+              },
+              "activeEnergy": {
+                "qty": 33.719186,
+                "units": "kcal",
+                "origin": "activityStatistics"
+              },
+              "paceKilometre": {
+                "qty": 785.405885,
+                "units": "s/km",
+                "origin": "activeTimeCalculation"
+              },
+              "heartRateAverage": {
+                "qty": 86.294391,
+                "units": "bpm",
+                "origin": "activityStatistics"
+              },
+              "heartRateMaximum": {
+                "qty": 92,
+                "units": "bpm",
+                "origin": "activityStatistics"
+              },
+              "heartRateMinimum": {
+                "qty": 81,
+                "units": "bpm",
+                "origin": "activityStatistics"
+              }
+            },
+            "duration": 434.620946,
+            "activityType": "walking",
+            "boundaryKind": "interval",
+            "configuration": {
+              "locationType": "outdoor",
+              "swimmingLocationType": "unknown"
+            },
+            "activeDuration": 434.620946,
+            "boundaryOrigin": "recordedActivity",
+            "elapsedDuration": 434.620946,
+            "activityTypeCode": 52
+          }
+        ],
+        "basalEnergy": [
+          {
+            "qty": 8.611243,
+            "date": "2026-10-03 11:40:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 8.982824,
+            "date": "2026-10-03 11:43:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 8.982746,
+            "date": "2026-10-03 11:46:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 0.10667,
+            "date": "2026-10-03 11:48:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          }
+        ],
+        "elevationUp": {
+          "qty": 0.6,
+          "units": "m"
+        },
+        "stepCadence": {
+          "qty": 67.092947,
+          "units": "count/min"
+        },
+        "temperature": {
+          "qty": 24.711662,
+          "units": "degC"
+        },
+        "totalEnergy": {
+          "qty": 212.292753,
+          "units": "kJ"
+        },
+        "activeEnergy": [
+          {
+            "qty": 18.040997,
+            "date": "2026-10-03 11:40:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 19.53092,
+            "date": "2026-10-03 11:43:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 21.0585,
+            "date": "2026-10-03 11:46:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 0.743215,
+            "date": "2026-10-03 11:48:00 +0200",
+            "units": "kJ",
+            "source": "Apple Watch|iPhone"
+          }
+        ],
+        "avgHeartRate": {
+          "qty": 86.294391,
+          "units": "count/min"
+        },
+        "maxHeartRate": {
+          "qty": 92,
+          "units": "count/min"
+        },
+        "heartRateData": [
+          {
+            "Avg": 83.083333,
+            "Max": 85,
+            "Min": 82,
+            "date": "2026-10-03 11:40:00 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 89.090909,
+            "Max": 92,
+            "Min": 85,
+            "date": "2026-10-03 11:42:00 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 86.583333,
+            "Max": 88,
+            "Min": 85,
+            "date": "2026-10-03 11:45:00 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 88,
+            "Max": 89,
+            "Min": 87,
+            "date": "2026-10-03 11:47:00 +0200",
+            "units": "count/min"
+          }
+        ],
+        "heartRateRecovery": [
+          {
+            "Avg": 93,
+            "Max": 93,
+            "Min": 93,
+            "date": "2026-10-03 11:47:27 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 132,
+            "Max": 132,
+            "Min": 132,
+            "date": "2026-10-03 11:48:13 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 135,
+            "Max": 135,
+            "Min": 135,
+            "date": "2026-10-03 11:48:46 +0200",
+            "units": "count/min"
+          },
+          {
+            "Avg": 140,
+            "Max": 140,
+            "Min": 140,
+            "date": "2026-10-03 11:49:12 +0200",
+            "units": "count/min"
+          }
+        ],
+        "activeEnergyBurned": {
+          "qty": 141.081073,
+          "units": "kJ"
+        },
+        "estimatedEffortScore": {
+          "qty": 2,
+          "units": "appleEffortScore"
+        },
+        "walkingAndRunningDistance": [
+          {
+            "qty": 0.07771,
+            "date": "2026-10-03 11:40:00 +0200",
+            "units": "km",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 0.076429,
+            "date": "2026-10-03 11:43:00 +0200",
+            "units": "km",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 0.075234,
+            "date": "2026-10-03 11:46:00 +0200",
+            "units": "km",
+            "source": "Apple Watch|iPhone"
+          },
+          {
+            "qty": 0.001997,
+            "date": "2026-10-03 11:48:00 +0200",
+            "units": "km",
+            "source": "Apple Watch|iPhone"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -207,7 +207,8 @@ export const IMPORT = {
   /** Our own limit, below Vercel's 4.5 MB request body cap, so we can answer 413 with a hint. */
   maxPayloadBytes: 4_000_000,
   rateLimit: { windowSeconds: 600, maxRequests: 30 },
-  runningWorkoutPattern: /run/i,
+  /** Workout names from English and Spanish iPhones (HAE translates "Outdoor Run" as "Exterior Ejecutar"). */
+  runningWorkoutPattern: /run|ejecutar|correr|carrera/i,
   tokenPrefix: "rtt_",
   tokenRandomBytes: 32,
 } as const;

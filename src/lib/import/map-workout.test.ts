@@ -1,11 +1,13 @@
-// TODO(real-fixture): these fixtures are PROVISIONAL (hand-written from the Health Auto Export docs).
-// When a real anonymized export arrives, add it as fixtures/hae/real-*.json, add a test below, and
-// adjust only mapWorkout() if field names differ — the import pipeline should not need changes.
+// The provisional-* fixtures are hand-written from the Health Auto Export docs; real-* fixtures are
+// anonymized exports from a device. Add new real exports as fixtures/hae/real-*.json with a test
+// below, and adjust only mapWorkout() if field names differ — the import pipeline should not change.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import legacy from "./__fixtures__/hae/provisional-v1-legacy.json";
 import mixed from "./__fixtures__/hae/provisional-v2-mixed.json";
 import outdoorRun from "./__fixtures__/hae/provisional-v2-outdoor-run.json";
+import realEs from "./__fixtures__/hae/real-v2-es.json";
+import { IMPORT } from "@/config/training";
 import { mapWorkout } from "./map-workout";
 import { matchSession } from "./match";
 import { parseHaeDate, toKm } from "./parse";
@@ -142,6 +144,38 @@ describe("mapWorkout — provisional v1 legacy", () => {
     const again = mapWorkout(HaePayloadSchema.parse(legacy).data.workouts[0], ctx);
     expect(again.status === "ok" && result.status === "ok" && again.workout.externalId === result.workout.externalId).toBe(true);
   });
+});
+
+describe("mapWorkout — real v2 export, Spanish iPhone", () => {
+  const results = HaePayloadSchema.parse(realEs).data.workouts.map((w) => mapWorkout(w, ctx));
+
+  it("imports the run named in Spanish and skips the strength workout and the walk", () => {
+    expect(results.map((r) => r.status)).toEqual(["skipped", "ok", "skipped"]);
+    const run = results[1];
+    if (run?.status !== "ok") throw new Error();
+    expect(run.workout).toMatchObject({
+      externalId: "EFF86E32-9F5B-4A4C-B565-BC65DE3D821B",
+      name: "Exterior Ejecutar",
+      seconds: 1962,
+      km: 4.211,
+      avgHr: 139,
+      maxHr: 163,
+    });
+    expect(run.workout.startAt.toISOString()).toBe("2026-10-03T09:47:18.000Z");
+    expect(run.workout.route).toHaveLength(4);
+  });
+});
+
+describe("running workout names", () => {
+  it.each(["Outdoor Run", "Indoor Run", "Running", "Trail Running", "Exterior Ejecutar", "Interior Ejecutar", "Correr", "Carrera al aire libre"])(
+    "imports %s",
+    (name) => expect(IMPORT.runningWorkoutPattern.test(name)).toBe(true),
+  );
+
+  it.each(["Exterior Caminar", "Outdoor Walk", "Entrenamiento de Fuerza Tradicional", "Outdoor Cycling", "Ciclismo exterior"])(
+    "skips %s",
+    (name) => expect(IMPORT.runningWorkoutPattern.test(name)).toBe(false),
+  );
 });
 
 describe("payload envelope", () => {
