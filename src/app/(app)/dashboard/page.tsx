@@ -76,119 +76,131 @@ export default async function DashboardPage() {
   const lastLong = d.longRuns.findLast((l) => l.date <= today && l.actualKm !== null) ?? null;
   const nextLong = d.longRuns.find((l) => l.date >= today && l.actualKm === null) ?? null;
 
+  // Rendered twice: in its mobile spot (below the stats) and, on desktop, full width above the columns.
+  const suggestions =
+    d.pendingAdjustments.length > 0 ? (
+      <Card title="Suggested changes">
+        {d.pendingAdjustments.map((a) => (
+          <AdjustmentCard key={a.id} adjustment={a} units={units} />
+        ))}
+      </Card>
+    ) : null;
+
   return (
     <div className="flex flex-col gap-3.5">
       {prompts}
+      {suggestions ? <div className="hidden lg:flex lg:flex-col">{suggestions}</div> : null}
 
-      <RaceHero
-        name={goal.name}
-        distanceKm={goal.distanceKm}
-        units={units}
-        daysToRace={d.daysToRace}
-        prediction={d.prediction}
-        targetSeconds={goal.targetTimeSeconds}
-        weeks={profile}
-        weekNumber={d.weekNumber}
-        totalWeeks={d.totalWeeks}
-      />
+      <div className="flex flex-col gap-3.5 lg:grid lg:grid-cols-12 lg:items-start">
+        <div className="flex flex-col gap-3.5 lg:col-span-5">
+          <RaceHero
+            name={goal.name}
+            distanceKm={goal.distanceKm}
+            units={units}
+            daysToRace={d.daysToRace}
+            prediction={d.prediction}
+            targetSeconds={goal.targetTimeSeconds}
+            weeks={profile}
+            weekNumber={d.weekNumber}
+            totalWeeks={d.totalWeeks}
+          />
 
-      <TodayCard session={todaySession} next={nextSession} today={today} units={units} />
+          <TodayCard session={todaySession} next={nextSession} today={today} units={units} />
 
-      <div className="grid grid-cols-3 gap-2">
-        <StatTile
-          label="This week"
-          value={
-            week ? (
-              <>
-                {formatDistanceValue(week.actualKm, units)}
-                <span className="text-base text-muted">
-                  /{formatDistanceValue(week.plannedKm, units)} {units}
-                </span>
-              </>
-            ) : (
-              "—"
-            )
-          }
-          meter={week && week.plannedKm > 0 ? week.actualKm / week.plannedKm : undefined}
-          detail={week?.compliance != null ? `${Math.round(week.compliance * 100)}% so far` : undefined}
-        />
-        <StatTile
-          label="Load"
-          value={acwr && acwr.ratio !== null && !acwr.insufficientHistory ? acwr.ratio.toFixed(2) : "—"}
-          detail={
-            !acwr || acwr.insufficientHistory ? (
-              "After 4 weeks of runs"
-            ) : acwr.flag === "high" ? (
-              <span className="text-status-critical">▲ High — ease off</span>
-            ) : acwr.flag === "low" ? (
-              <span className="text-status-warning">▼ Low — building</span>
-            ) : acwr.flag === "ok" ? (
-              <span className="text-status-good">● In range</span>
-            ) : (
-              "No recent load"
-            )
-          }
-        />
-        <StatTile
-          label="Long run"
-          value={
-            lastLong?.actualKm != null ? (
-              <>
-                {formatDistanceValue(lastLong.actualKm, units)}
-                <span className="text-base text-muted"> {units}</span>
-              </>
-            ) : (
-              "—"
-            )
-          }
-          detail={nextLong ? `Next: ${formatDistance(nextLong.plannedKm, units, 0)}` : undefined}
-        />
+<div className="grid grid-cols-3 gap-2">
+            <StatTile
+              label="This week"
+              value={
+                week ? (
+                  <>
+                    {formatDistanceValue(week.actualKm, units)}
+                    <span className="text-base text-muted">
+                      /{formatDistanceValue(week.plannedKm, units)} {units}
+                    </span>
+                  </>
+                ) : (
+                  "—"
+                )
+              }
+              meter={week && week.plannedKm > 0 ? week.actualKm / week.plannedKm : undefined}
+              detail={week?.compliance != null ? `${Math.round(week.compliance * 100)}% so far` : undefined}
+            />
+            <StatTile
+              label="Load"
+              value={acwr && acwr.ratio !== null && !acwr.insufficientHistory ? acwr.ratio.toFixed(2) : "—"}
+              detail={
+                !acwr || acwr.insufficientHistory ? (
+                  "After 4 weeks of runs"
+                ) : acwr.flag === "high" ? (
+                  <span className="text-status-critical">▲ High — ease off</span>
+                ) : acwr.flag === "low" ? (
+                  <span className="text-status-warning">▼ Low — building</span>
+                ) : acwr.flag === "ok" ? (
+                  <span className="text-status-good">● In range</span>
+                ) : (
+                  "No recent load"
+                )
+              }
+            />
+            <StatTile
+              label="Long run"
+              value={
+                lastLong?.actualKm != null ? (
+                  <>
+                    {formatDistanceValue(lastLong.actualKm, units)}
+                    <span className="text-base text-muted"> {units}</span>
+                  </>
+                ) : (
+                  "—"
+                )
+              }
+              detail={nextLong ? `Next: ${formatDistance(nextLong.plannedKm, units, 0)}` : undefined}
+            />
+          </div>
+
+          {suggestions ? <div className="lg:hidden">{suggestions}</div> : null}
+
+          <Card
+            title="This week"
+            action={
+              <Link href="/plan" className="text-sm font-semibold text-accent">
+                Full plan →
+              </Link>
+            }
+          >
+            <WeekStrip days={weekDays} units={units} />
+          </Card>
+        </div>
+
+        <div className="flex flex-col gap-3.5 lg:col-span-7">
+          {runWeeks.length > 0 ? (
+            <Card>
+              <VolumeBars weeks={runWeeks} units={units} />
+            </Card>
+          ) : null}
+
+          <div className="grid gap-3.5 xl:grid-cols-2">
+            <Card>
+              <AcwrChart
+                // Ratios computed on less than a full 28-day window are artifacts (one week of runs = 4.0): not plotted.
+                data={d.acwr.map((p) => ({ date: p.date, ratio: p.insufficientHistory ? null : p.ratio, acute: p.acute, chronic: p.chronic }))}
+                insufficientHistory={acwr?.insufficientHistory ?? true}
+              />
+              {d.estimatedLoadShare > 0.5 ? (
+                <p className="text-xs text-muted">
+                  Most recent runs have no RPE logged, so load is estimated from heart rate or session type. Logging RPE
+                  makes this more accurate.
+                </p>
+              ) : null}
+            </Card>
+            {d.longRuns.length > 0 ? (
+              <Card>
+                <LongRunChart units={units} data={d.longRuns} />
+              </Card>
+            ) : null}
+          </div>
+        </div>
       </div>
-
-      {d.pendingAdjustments.length > 0 ? (
-        <Card title="Suggested changes">
-          {d.pendingAdjustments.map((a) => (
-            <AdjustmentCard key={a.id} adjustment={a} units={units} />
-          ))}
-        </Card>
-      ) : null}
-
-      <Card
-        title="This week"
-        action={
-          <Link href="/plan" className="text-sm font-semibold text-accent">
-            Full plan →
-          </Link>
-        }
-      >
-        <WeekStrip days={weekDays} units={units} />
-      </Card>
-
-      {runWeeks.length > 0 ? (
-        <Card>
-          <VolumeBars weeks={runWeeks} units={units} />
-        </Card>
-      ) : null}
-
-      <Card>
-        <AcwrChart
-          // Ratios computed on less than a full 28-day window are artifacts (one week of runs = 4.0): not plotted.
-          data={d.acwr.map((p) => ({ date: p.date, ratio: p.insufficientHistory ? null : p.ratio, acute: p.acute, chronic: p.chronic }))}
-          insufficientHistory={acwr?.insufficientHistory ?? true}
-        />
-        {d.estimatedLoadShare > 0.5 ? (
-          <p className="text-xs text-muted">
-            Most recent runs have no RPE logged, so load is estimated from heart rate or session type. Logging RPE
-            makes this more accurate.
-          </p>
-        ) : null}
-      </Card>
-
-      {d.longRuns.length > 0 ? (
-        <Card>
-          <LongRunChart units={units} data={d.longRuns} />
-        </Card>
-      ) : null}
     </div>
   );
 }

@@ -29,7 +29,7 @@ export function LongRunChart({ data, units }: { data: readonly LongRunDatum[]; u
         rows: rows.map((r) => [shortDate(r.date), r.planned.toFixed(1), r.actual?.toFixed(1) ?? "—"]),
       }}
     >
-      <div className="h-44">
+      <div className="h-44 lg:h-56">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
             <CartesianGrid vertical={false} stroke="var(--border)" strokeOpacity={0.6} />
