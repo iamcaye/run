@@ -39,47 +39,58 @@ export default async function GoalPage({ params }: PageProps<"/goals/[id]">) {
         <StatusBadge status={goal.status} />
       </div>
 
-      {canLogResult(goal, today) ? (
-        <Card title="Log your result">
-          <div id="result" className="-mt-2" />
-          <ResultForm action={logResultAction.bind(null, goal.id)} />
-        </Card>
-      ) : null}
-
-      <Card title="Edit goal">
-        <GoalForm
-          action={updateGoalAction.bind(null, goal.id)}
-          defaults={goalToFormDefaults(goal, settings.units)}
-          units={settings.units}
-          submitLabel="Save changes"
-        />
-      </Card>
-
-      <Card title="Status">
-        <div className="flex flex-wrap gap-2">
-          {canActivate(goal) ? (
-            <form action={activateGoalAction.bind(null, goal.id)}>
-              <SubmitButton pendingLabel="Switching…">Make active</SubmitButton>
-            </form>
-          ) : null}
-          {canAbandon(goal) ? (
-            <form action={abandonGoalAction.bind(null, goal.id)}>
-              <ConfirmSubmitButton variant="secondary" confirmMessage="Abandon this goal? Its history is kept.">
-                Abandon
-              </ConfirmSubmitButton>
-            </form>
-          ) : null}
-          <form action={deleteGoalAction.bind(null, goal.id)}>
-            <ConfirmSubmitButton
-              variant="secondary"
-              className="text-danger"
-              confirmMessage="Delete this goal and its plan permanently?"
-            >
-              Delete
-            </ConfirmSubmitButton>
-          </form>
+      {/* Edit left, result + status right at lg; `contents` + order keeps the stacked order below lg. */}
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,40rem)_1fr] lg:items-start">
+        <div className="contents lg:flex lg:flex-col lg:gap-4">
+          <div className="order-2">
+            <Card title="Edit goal">
+              <GoalForm
+                action={updateGoalAction.bind(null, goal.id)}
+                defaults={goalToFormDefaults(goal, settings.units)}
+                units={settings.units}
+                submitLabel="Save changes"
+              />
+            </Card>
+          </div>
         </div>
-      </Card>
+        <div className="contents lg:flex lg:flex-col lg:gap-4">
+          {canLogResult(goal, today) ? (
+            <div className="order-1">
+              <Card title="Log your result">
+                <div id="result" className="-mt-2" />
+                <ResultForm action={logResultAction.bind(null, goal.id)} />
+              </Card>
+            </div>
+          ) : null}
+          <div className="order-3">
+            <Card title="Status">
+              <div className="flex flex-wrap gap-2">
+                {canActivate(goal) ? (
+                  <form action={activateGoalAction.bind(null, goal.id)}>
+                    <SubmitButton pendingLabel="Switching…">Make active</SubmitButton>
+                  </form>
+                ) : null}
+                {canAbandon(goal) ? (
+                  <form action={abandonGoalAction.bind(null, goal.id)}>
+                    <ConfirmSubmitButton variant="secondary" confirmMessage="Abandon this goal? Its history is kept.">
+                      Abandon
+                    </ConfirmSubmitButton>
+                  </form>
+                ) : null}
+                <form action={deleteGoalAction.bind(null, goal.id)}>
+                  <ConfirmSubmitButton
+                    variant="secondary"
+                    className="text-danger"
+                    confirmMessage="Delete this goal and its plan permanently?"
+                  >
+                    Delete
+                  </ConfirmSubmitButton>
+                </form>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

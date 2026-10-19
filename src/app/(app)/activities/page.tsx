@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { z } from "zod";
-import { ActivityRow } from "@/components/activities/activity-row";
+import { ACTIVITY_COLUMNS, ActivityRow } from "@/components/activities/activity-row";
 import { Card } from "@/components/ui/form";
 import { toActivityRows } from "@/server/activity-rows";
 import { requireUserContext } from "@/server/context";
@@ -31,11 +31,25 @@ export default async function ActivitiesPage({ searchParams }: PageProps<"/activ
             No runs yet. Set up <Link href="/settings" className="text-accent">Apple Watch sync</Link> or log a run by hand.
           </p>
         ) : (
-          <ul className="-my-3 divide-y divide-border">
-            {rows.map((a) => (
-              <ActivityRow key={a.id} a={a} units={settings.units} />
-            ))}
-          </ul>
+          <>
+            <div
+              aria-hidden
+              className={`hidden items-center gap-3 text-xs font-semibold tracking-wide text-muted uppercase lg:grid ${ACTIVITY_COLUMNS}`}
+            >
+              <span>Date</span>
+              <span>Type</span>
+              <span>Distance</span>
+              <span>Time</span>
+              <span>Pace</span>
+              <span>Avg HR</span>
+              <span>RPE</span>
+            </div>
+            <ul className="-my-3 divide-y divide-border lg:-mt-1">
+              {rows.map((a) => (
+                <ActivityRow key={a.id} a={a} units={settings.units} columns />
+              ))}
+            </ul>
+          </>
         )}
       </Card>
       {page > 1 || hasNext ? (

@@ -5,7 +5,7 @@ import type { LatLon } from "./route-map";
 
 const RouteMap = dynamic(() => import("./route-map"), {
   ssr: false,
-  loading: () => <div className="h-64 w-full animate-pulse rounded-lg bg-border/40" />,
+  loading: () => <div className="h-64 w-full animate-pulse rounded-lg bg-border/40 lg:h-96" />,
 });
 
 export function RouteMapLazy({ points }: { points: readonly LatLon[] }) {
