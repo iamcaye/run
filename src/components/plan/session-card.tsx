@@ -1,11 +1,9 @@
 import Link from "next/link";
-import { describeStep, SESSION_LABELS } from "@/lib/planning/describe";
+import { describeStep, QUALITY_TYPES, SESSION_LABELS } from "@/lib/planning/describe";
 import { isoWeekday, WEEKDAY_LABELS, type LocalDate } from "@/lib/time";
 import { formatDistance, formatDistanceValue, formatPace, type Units } from "@/lib/units";
 import type { PlannedSession } from "@/server/dal";
 import { StructureBar } from "./structure-bar";
-
-const HARD = new Set(["tempo", "intervals", "race_pace", "race"]);
 
 export function dayLabel(date: LocalDate): string {
   const d = new Date(`${date}T00:00:00Z`);
@@ -13,7 +11,7 @@ export function dayLabel(date: LocalDate): string {
 }
 
 const KIND = (type: PlannedSession["type"]) =>
-  HARD.has(type) ? { label: "Quality", className: "text-accent" } : type === "long" ? { label: "Long", className: "text-foreground" } : null;
+  QUALITY_TYPES.has(type) ? { label: "Quality", className: "text-accent" } : type === "long" ? { label: "Long", className: "text-foreground" } : null;
 
 export function SessionCard({
   session,
