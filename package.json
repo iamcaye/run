@@ -17,7 +17,8 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:studio": "drizzle-kit studio",
     "seed": "tsx --conditions=react-server scripts/seed.ts",
-    "reprocess": "tsx --conditions=react-server scripts/reprocess.ts"
+    "reprocess": "tsx --conditions=react-server scripts/reprocess.ts",
+    "screenshots": "tsx scripts/screenshots.ts"
   },
   "dependencies": {
     "@date-fns/tz": "1.5.0",

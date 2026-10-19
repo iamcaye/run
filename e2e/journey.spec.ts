@@ -105,4 +105,7 @@ test("bad tokens, missing cron secret and signed-out visits are rejected", async
   // Signed out → sent to sign-in.
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/sign-in/);
+  // …while the root is the public landing page.
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Pick a race");
 });

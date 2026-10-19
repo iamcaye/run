@@ -56,6 +56,15 @@ pnpm db:migrate    # apply migrations in ./drizzle to DATABASE_URL
 pnpm db:studio     # browse data
 ```
 
+## Landing screenshots
+
+The public landing page (`/`) shows real screenshots of the demo users, stored in `src/assets/landing/`. After UI changes, regenerate them with the dev server running on freshly seeded data:
+
+```bash
+pnpm seed && pnpm dev
+pnpm screenshots              # --base <url> for another server
+```
+
 ## Tests
 
 ```bash
