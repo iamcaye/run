@@ -1,3 +1,4 @@
+import { NarrowPage } from "@/components/ui/narrow-page";
 import Link from "next/link";
 import { ActivityRow } from "@/components/activities/activity-row";
 import { ManualRunForm } from "@/components/activities/manual-run-form";
@@ -15,7 +16,7 @@ export default async function QuickLogPage() {
   const [row] = latest ? await toActivityRows(scope, [latest], settings.timezone) : [];
 
   return (
-    <div className="flex flex-col gap-4">
+    <NarrowPage>
       <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">Quick log</h1>
 
       <Card title="Your latest run">
@@ -39,6 +40,6 @@ export default async function QuickLogPage() {
           <ManualRunForm today={today} units={settings.units} />
         </Card>
       </section>
-    </div>
+    </NarrowPage>
   );
 }

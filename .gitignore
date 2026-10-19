@@ -48,3 +48,6 @@ next-env.d.ts
 # Playwright
 /test-results/
 /playwright-report/
+
+# Superpowers workflow
+/.superpowers/

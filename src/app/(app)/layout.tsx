@@ -20,7 +20,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-1 flex-col">
       <header>
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 pt-4 pb-1">
+        <div className="mx-auto flex w-full max-w-3xl lg:max-w-7xl items-center justify-between gap-3 px-4 pt-4 pb-1">
           <Link href="/dashboard" aria-label="Race Training — home">
             <Wordmark className="text-[22px]" />
           </Link>
@@ -41,7 +41,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 pt-4 pb-28 sm:pb-8">{children}</main>
+      <main className="mx-auto w-full max-w-3xl lg:max-w-7xl flex-1 px-4 pt-4 pb-28 sm:pb-8">{children}</main>
       <div className="sm:hidden">
         <AppNav variant="mobile" />
       </div>
