@@ -4,7 +4,7 @@ import { ADAPTATION, CRON } from "@/config/training";
 import type { MetricActivity } from "@/lib/metrics";
 import { adaptPlan, type AdjustmentRule } from "@/lib/planning/adapt";
 import { addDays, lastClosedWeekStart, localDateOf, startOfWeek, type IsoWeekday, type LocalDate } from "@/lib/time";
-import { forUser, type UserScope } from "@/server/dal";
+import { forUser, type Goal, type Settings, type UserScope } from "@/server/dal";
 import { doneRunKeys, listActiveGoalOwners } from "@/server/system/adaptation";
 import { toPlanGoal } from "./plans";
 
@@ -53,7 +53,6 @@ export async function runWeeklyAdaptation(scope: UserScope, goalId: string, week
       seconds: a.seconds,
       rpe: a.rpe,
       avgHr: a.avgHr,
-      hrSeries: a.hrSeries,
       plannedSessionId: a.plannedSessionId,
     }));
 
@@ -125,13 +124,26 @@ export async function runDueAdaptations(now: Date = new Date()): Promise<CronSum
 export async function ensureWeeklyAdaptation(scope: UserScope, now: Date = new Date()): Promise<RunOutcome | null> {
   const goal = await scope.goals.getActive();
   if (!goal) return null;
-  const settings = await scope.settings.get();
-  const [first] = await scope.sessions.listForGoal(goal.id);
+  const [settings, [first]] = await Promise.all([scope.settings.get(), scope.sessions.listForGoal(goal.id)]);
+  return ensureWeeklyAdaptationFor(scope, { goal, planStart: first?.date ?? null, settings }, now);
+}
+
+/**
+ * The same fallback from state the caller already loaded (the dashboard has the goal, plan start and settings),
+ * so the usual "nothing due" case costs a single query.
+ */
+export async function ensureWeeklyAdaptationFor(
+  scope: UserScope,
+  state: { goal: Goal | null; planStart: LocalDate | null; settings: Settings },
+  now: Date = new Date(),
+): Promise<RunOutcome | null> {
+  const { goal, settings } = state;
+  if (!goal) return null;
   const week = weekToAdapt({
     now,
     timezone: settings.timezone,
     weekStart: settings.weekStart as IsoWeekday,
-    planStart: first?.date ?? null,
+    planStart: state.planStart,
     raceDate: goal.raceDate,
   });
   if (!week) return null;

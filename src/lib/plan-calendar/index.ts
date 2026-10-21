@@ -92,7 +92,7 @@ export function buildMonthGrid(input: {
   const volume = new Map(
     weeklyVolume({
       sessions,
-      activities: activities.map((a) => ({ ...a, seconds: 0, rpe: null, avgHr: null, hrSeries: null })),
+      activities: activities.map((a) => ({ ...a, seconds: 0, rpe: null, avgHr: null })),
       weekStart,
       asOf: today,
     }).map((w) => [w.weekStart, w]),

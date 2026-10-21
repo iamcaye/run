@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { after } from "next/server";
 import { AdjustmentCard } from "@/components/adjustments/adjustment-card";
 import { AcwrChart } from "@/components/charts/acwr-chart";
 import { LongRunChart } from "@/components/charts/long-run-chart";
@@ -14,17 +13,21 @@ import { addDays, startOfWeek, type IsoWeekday } from "@/lib/time";
 import { formatDistance, formatDistanceValue } from "@/lib/units";
 import { requireUserContext } from "@/server/context";
 import { getDashboard } from "@/services/dashboard";
-import { ensureWeeklyAdaptation } from "@/services/weekly-adaptation";
+import { ensureWeeklyAdaptationFor } from "@/services/weekly-adaptation";
 
 export const metadata = { title: "Dashboard · Race Training" };
 
 export default async function DashboardPage() {
   const { scope, settings, today } = await requireUserContext();
   if (!settings.onboardingCompletedAt) redirect("/onboarding");
-  // On-demand fallback for the weekly job: same function and idempotency as the cron. Runs after the response so it
-  // never delays the page; any proposals it creates show on the next visit.
-  after(() => ensureWeeklyAdaptation(scope).catch((err: unknown) => console.error("weekly adaptation failed", err)));
-  const d = await getDashboard(scope, settings, today);
+  let d = await getDashboard(scope, settings, today);
+  // On-demand fallback for the weekly job: same function and idempotency as the cron. Checked against the data just
+  // loaded (one query); when it does propose changes, reload so they show on this visit.
+  const adaptation = await ensureWeeklyAdaptationFor(scope, { goal: d.goal, planStart: d.planStart, settings }).catch((err: unknown) => {
+    console.error("weekly adaptation failed", err);
+    return null;
+  });
+  if (adaptation?.status === "done" && adaptation.proposals > 0) d = await getDashboard(scope, settings, today);
   const units = settings.units;
 
   const prompts = d.awaitingResult.map((g) => (

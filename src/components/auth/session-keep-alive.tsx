@@ -17,7 +17,8 @@ export function SessionKeepAlive() {
       if (document.visibilityState !== "visible" || Date.now() - last < REFRESH_MS) return;
       last = Date.now();
       // Bypass the cache so the server re-reads the session and re-issues a fresh cookie.
-      void authClient.getSession({ query: { disableCookieCache: true } });
+      // Offline is fine: the next render just reads the session from the database.
+      authClient.getSession({ query: { disableCookieCache: true } }).catch(() => {});
     };
     refresh();
     const timer = setInterval(refresh, REFRESH_MS);

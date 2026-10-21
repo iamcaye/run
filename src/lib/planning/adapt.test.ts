@@ -42,7 +42,7 @@ const history: MetricActivity[] = Array.from({ length: 42 }, (_, i) => addDays(P
   .map((d) => run(d, 7, 360));
 
 function run(date: string, km: number, pace: number, sessionId: string | null = null, extra: Partial<MetricActivity> = {}): MetricActivity {
-  return { id: `a-${date}-${sessionId ?? "x"}`, localDate: date, km, seconds: Math.round(km * pace), rpe: null, avgHr: 145, hrSeries: null, plannedSessionId: sessionId, ...extra };
+  return { id: `a-${date}-${sessionId ?? "x"}`, localDate: date, km, seconds: Math.round(km * pace), rpe: null, avgHr: 145, plannedSessionId: sessionId, ...extra };
 }
 
 /** Runs every planned session up to `until` as prescribed, except those `skip` rejects. */

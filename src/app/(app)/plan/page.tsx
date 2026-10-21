@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { AdjustmentCard } from "@/components/adjustments/adjustment-card";
 import { GoalFacts } from "@/components/goals/goal-summary";
 import { MonthCalendar } from "@/components/plan/month-calendar";
@@ -7,12 +8,13 @@ import { PlanOverview } from "@/components/plan/plan-overview";
 import { RegenerateButton } from "@/components/plan/regenerate-button";
 import { dayLabel, SessionCard } from "@/components/plan/session-card";
 import { Card } from "@/components/ui/form";
-import { resolveMonth } from "@/lib/plan-calendar";
+import { Bone } from "@/components/ui/skeleton";
+import { resolveMonth, type YearMonth } from "@/lib/plan-calendar";
 import { PHASE_LABELS, summarizeWarnings } from "@/lib/planning/describe";
-import { addDays, startOfWeek, type IsoWeekday } from "@/lib/time";
+import { addDays, startOfWeek, type IsoWeekday, type LocalDate } from "@/lib/time";
 import { formatDistance } from "@/lib/units";
 import { requireUserContext } from "@/server/context";
-import type { PlannedSession } from "@/server/dal";
+import type { Goal, PlannedSession, Settings, UserScope } from "@/server/dal";
 import { toAdjustmentView } from "@/services/adjustment-view";
 import { getPlanCalendar } from "@/services/plan-calendar";
 import { planInsights } from "@/services/plans";
@@ -41,10 +43,6 @@ export default async function PlanPage({ searchParams }: PageProps<"/plan">) {
   ]);
   const monthParam = (await searchParams).month;
   const month = resolveMonth(typeof monthParam === "string" ? monthParam : undefined, today, sessions);
-  const [insights, grid] = await Promise.all([
-    planInsights(scope, goal, settings, today, sessions[0]?.date),
-    getPlanCalendar(scope, settings, sessions, month, today),
-  ]);
 
   // Group by calendar week (user-moved sessions land in the week they now sit in).
   const weekStart = settings.weekStart as IsoWeekday;
@@ -56,7 +54,6 @@ export default async function PlanPage({ searchParams }: PageProps<"/plan">) {
     else groups.push({ start, sessions: [s] });
   }
   const currentStart = startOfWeek(today, weekStart);
-  const warnings = summarizeWarnings(insights.warnings);
 
   return (
     <div className="flex flex-col gap-4">
@@ -80,13 +77,10 @@ export default async function PlanPage({ searchParams }: PageProps<"/plan">) {
             />
           </div>
           <div className="flex flex-col gap-4 lg:col-span-2 lg:rounded-[20px] lg:bg-surface lg:p-4">
-            {warnings.length ? (
-              <ul className="flex list-disc flex-col gap-1 pl-5 text-sm text-muted">
-                {warnings.map((w) => (
-                  <li key={w}>{w}</li>
-                ))}
-              </ul>
-            ) : null}
+            {/* Warnings and the month grid need more queries and a plan re-run: they stream in after the rest. */}
+            <Suspense fallback={null}>
+              <PlanWarnings scope={scope} goal={goal} settings={settings} today={today} planStart={sessions[0]?.date} />
+            </Suspense>
             <div id="regenerate" className="flex flex-col gap-1 border-t border-border pt-3 lg:border-t-0 lg:pt-0">
               <p className="text-sm text-muted">
                 Changed your goal or availability? Rebuild the sessions from today on.
@@ -104,7 +98,9 @@ export default async function PlanPage({ searchParams }: PageProps<"/plan">) {
       ) : null}
 
       <div className="hidden lg:block">
-        <MonthCalendar grid={grid} units={settings.units} />
+        <Suspense fallback={<Bone className="h-[640px] rounded-[20px]" />}>
+          <PlanMonth scope={scope} settings={settings} sessions={sessions} month={month} today={today} />
+        </Suspense>
       </div>
 
       {groups.length > 0 ? (
@@ -159,4 +155,45 @@ export default async function PlanPage({ searchParams }: PageProps<"/plan">) {
       </Card>
     </div>
   );
+}
+
+async function PlanWarnings({
+  scope,
+  goal,
+  settings,
+  today,
+  planStart,
+}: {
+  scope: UserScope;
+  goal: Goal;
+  settings: Settings;
+  today: LocalDate;
+  planStart: LocalDate | undefined;
+}) {
+  const warnings = summarizeWarnings((await planInsights(scope, goal, settings, today, planStart)).warnings);
+  if (!warnings.length) return null;
+  return (
+    <ul className="flex list-disc flex-col gap-1 pl-5 text-sm text-muted">
+      {warnings.map((w) => (
+        <li key={w}>{w}</li>
+      ))}
+    </ul>
+  );
+}
+
+async function PlanMonth({
+  scope,
+  settings,
+  sessions,
+  month,
+  today,
+}: {
+  scope: UserScope;
+  settings: Settings;
+  sessions: PlannedSession[];
+  month: YearMonth;
+  today: LocalDate;
+}) {
+  const grid = await getPlanCalendar(scope, settings, sessions, month, today);
+  return <MonthCalendar grid={grid} units={settings.units} />;
 }
