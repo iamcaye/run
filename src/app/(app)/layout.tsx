@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { SessionKeepAlive } from "@/components/auth/session-keep-alive";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { AppNav } from "@/components/nav/app-nav";
 import { Wordmark } from "@/components/ui/wordmark";
@@ -19,6 +20,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await requireUser();
   return (
     <div className="flex flex-1 flex-col">
+      <SessionKeepAlive />
       <header>
         <div className="mx-auto flex w-full max-w-3xl lg:max-w-7xl items-center justify-between gap-3 px-4 pt-4 pb-1">
           <Link href="/dashboard" aria-label="Race Training — home">

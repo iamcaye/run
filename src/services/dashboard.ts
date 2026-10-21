@@ -51,7 +51,9 @@ export async function getDashboard(scope: UserScope, settings: Settings, today: 
   const goal = goals.find((g) => g.status === "active") ?? null;
   const awaitingResult = goals.filter((g) => needsResultPrompt(g, today));
 
-  const sessions = goal ? await scope.sessions.listForGoal(goal.id) : [];
+  const [sessions, adjustments] = goal
+    ? await Promise.all([scope.sessions.listForGoal(goal.id), scope.adjustments.listForGoal(goal.id)])
+    : [[], []];
   const planStart = sessions[0]?.date ?? today;
   const acwrFrom = addDays(today, -(ACWR_CHART_DAYS - 1));
   const since = [planStart, addDays(acwrFrom, -METRICS.chronicDays)].sort()[0] ?? today;
@@ -118,11 +120,9 @@ export async function getDashboard(scope: UserScope, settings: Settings, today: 
     thisWeek,
     thisWeekVolume: volume.find((w) => w.isCurrent) ?? null,
     // Pending proposals, plus ones decided in the last day so the outcome stays visible.
-    pendingAdjustments: goal
-      ? (await scope.adjustments.listForGoal(goal.id))
-          .filter((a) => a.status === "proposed" || (a.status !== "superseded" && a.decidedAt && Date.now() - a.decidedAt.getTime() < 86_400_000))
-          .map((a) => toAdjustmentView(a, sessions))
-      : [],
+    pendingAdjustments: adjustments
+      .filter((a) => a.status === "proposed" || (a.status !== "superseded" && a.decidedAt && Date.now() - a.decidedAt.getTime() < 86_400_000))
+      .map((a) => toAdjustmentView(a, sessions)),
     volume,
     acwr,
     acwrToday: acwr.at(-1) ?? null,

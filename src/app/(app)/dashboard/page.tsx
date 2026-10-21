@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { AdjustmentCard } from "@/components/adjustments/adjustment-card";
 import { AcwrChart } from "@/components/charts/acwr-chart";
 import { LongRunChart } from "@/components/charts/long-run-chart";
@@ -20,8 +21,9 @@ export const metadata = { title: "Dashboard · Race Training" };
 export default async function DashboardPage() {
   const { scope, settings, today } = await requireUserContext();
   if (!settings.onboardingCompletedAt) redirect("/onboarding");
-  // On-demand fallback for the weekly job: same function and idempotency as the cron.
-  await ensureWeeklyAdaptation(scope).catch((err: unknown) => console.error("weekly adaptation failed", err));
+  // On-demand fallback for the weekly job: same function and idempotency as the cron. Runs after the response so it
+  // never delays the page; any proposals it creates show on the next visit.
+  after(() => ensureWeeklyAdaptation(scope).catch((err: unknown) => console.error("weekly adaptation failed", err)));
   const d = await getDashboard(scope, settings, today);
   const units = settings.units;
 
