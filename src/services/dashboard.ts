@@ -26,6 +26,8 @@ export type DashboardSession = PlannedSession & { status: SessionStatus; actualK
 
 export type Dashboard = {
   goal: Goal | null;
+  /** Date of the active goal's first planned session. */
+  planStart: LocalDate | null;
   awaitingResult: Goal[];
   daysToRace: number | null;
   phase: Phase | null;
@@ -51,11 +53,19 @@ export async function getDashboard(scope: UserScope, settings: Settings, today: 
   const goal = goals.find((g) => g.status === "active") ?? null;
   const awaitingResult = goals.filter((g) => needsResultPrompt(g, today));
 
-  const sessions = goal ? await scope.sessions.listForGoal(goal.id) : [];
-  const planStart = sessions[0]?.date ?? today;
   const acwrFrom = addDays(today, -(ACWR_CHART_DAYS - 1));
-  const since = [planStart, addDays(acwrFrom, -METRICS.chronicDays)].sort()[0] ?? today;
-  const rows = await scope.activities.since(new Date(`${addDays(since, -1)}T00:00:00Z`));
+  const metricsFrom = addDays(acwrFrom, -METRICS.chronicDays);
+  // Activities reach back to the plan start too; the DAL resolves it in SQL so all three queries run at once.
+  const metricsFromUtc = new Date(`${addDays(metricsFrom, -1)}T00:00:00Z`);
+  const [sessions, adjustments, rows] = goal
+    ? await Promise.all([
+        scope.sessions.listForGoal(goal.id),
+        scope.adjustments.listForGoal(goal.id),
+        scope.activities.sinceOrGoalStart(metricsFromUtc, goal.id),
+      ])
+    : [[], [], await scope.activities.since(metricsFromUtc)];
+  const planStart = sessions[0]?.date ?? today;
+  const since = [planStart, metricsFrom].sort()[0] ?? today;
 
   const activities: MetricActivity[] = rows
     .map((a) => ({
@@ -65,7 +75,6 @@ export async function getDashboard(scope: UserScope, settings: Settings, today: 
       seconds: a.seconds,
       rpe: a.rpe,
       avgHr: a.avgHr,
-      hrSeries: a.hrSeries,
       plannedSessionId: a.plannedSessionId,
     }))
     .filter((a) => a.localDate >= since);
@@ -110,6 +119,7 @@ export async function getDashboard(scope: UserScope, settings: Settings, today: 
 
   return {
     goal,
+    planStart: sessions[0]?.date ?? null,
     awaitingResult,
     daysToRace: goal ? daysBetween(today, goal.raceDate) : null,
     phase: thisWeek[0]?.phase ?? sessions.find((s) => s.date >= today)?.phase ?? null,
@@ -118,11 +128,9 @@ export async function getDashboard(scope: UserScope, settings: Settings, today: 
     thisWeek,
     thisWeekVolume: volume.find((w) => w.isCurrent) ?? null,
     // Pending proposals, plus ones decided in the last day so the outcome stays visible.
-    pendingAdjustments: goal
-      ? (await scope.adjustments.listForGoal(goal.id))
-          .filter((a) => a.status === "proposed" || (a.status !== "superseded" && a.decidedAt && Date.now() - a.decidedAt.getTime() < 86_400_000))
-          .map((a) => toAdjustmentView(a, sessions))
-      : [],
+    pendingAdjustments: adjustments
+      .filter((a) => a.status === "proposed" || (a.status !== "superseded" && a.decidedAt && Date.now() - a.decidedAt.getTime() < 86_400_000))
+      .map((a) => toAdjustmentView(a, sessions)),
     volume,
     acwr,
     acwrToday: acwr.at(-1) ?? null,

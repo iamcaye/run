@@ -1,5 +1,4 @@
 import type { SessionType } from "@/config/training";
-import type { HrSample } from "@/lib/import/types";
 import type { LocalDate } from "@/lib/time";
 
 /** An activity as metrics see it. `localDate` is computed by the caller in the user's time zone. */
@@ -10,7 +9,6 @@ export type MetricActivity = {
   seconds: number;
   rpe: number | null;
   avgHr: number | null;
-  hrSeries: HrSample[] | null;
   plannedSessionId: string | null;
 };
 

@@ -1,9 +1,12 @@
 import "server-only";
-import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns, gte, lt, sql } from "drizzle-orm";
 import type { Db } from "@/server/db/client";
-import { activity, routePoint } from "@/server/db/schema";
+import { activity, plannedSession, routePoint } from "@/server/db/schema";
 import { assertOwnsRawImport, assertOwnsSession } from "./ownership";
-import type { Activity, ActivityInput, ActivityPatch, RoutePoint } from "./types";
+import type { Activity, ActivityInput, ActivityPatch, ActivitySummary, RoutePoint } from "./types";
+
+// Lists skip the per-second HR series: it is most of each row and only the activity detail page charts it.
+const { hrSeries: _hrSeries, ...summaryColumns } = getTableColumns(activity);
 
 export function activitiesRepo(d: Db, userId: string) {
   const owned = (id: string) => and(eq(activity.id, id), eq(activity.userId, userId));
@@ -14,9 +17,9 @@ export function activitiesRepo(d: Db, userId: string) {
   }
 
   return {
-    list({ limit = 50, offset = 0 }: { limit?: number; offset?: number } = {}): Promise<Activity[]> {
+    list({ limit = 50, offset = 0 }: { limit?: number; offset?: number } = {}): Promise<ActivitySummary[]> {
       return d
-        .select()
+        .select(summaryColumns)
         .from(activity)
         .where(eq(activity.userId, userId))
         .orderBy(desc(activity.startAt))
@@ -25,18 +28,36 @@ export function activitiesRepo(d: Db, userId: string) {
     },
 
     /** Activities that started at or after `since`, oldest first. */
-    since(since: Date): Promise<Activity[]> {
+    since(since: Date): Promise<ActivitySummary[]> {
       return d
-        .select()
+        .select(summaryColumns)
         .from(activity)
         .where(and(eq(activity.userId, userId), gte(activity.startAt, since)))
         .orderBy(asc(activity.startAt));
     },
 
-    /** Activities that started in `[from, to)`, oldest first. */
-    between(from: Date, to: Date): Promise<Activity[]> {
+    /**
+     * Activities from `since` or the UTC day before the goal's first planned session, whichever is earlier,
+     * oldest first. The plan start is resolved in SQL so callers needn't wait for the sessions query first.
+     */
+    sinceOrGoalStart(since: Date, goalId: string): Promise<ActivitySummary[]> {
+      const planStart = d
+        .select({ first: sql`min(${plannedSession.date})` })
+        .from(plannedSession)
+        .where(and(eq(plannedSession.userId, userId), eq(plannedSession.goalId, goalId)));
+      // LEAST ignores the NULL a goal without sessions yields.
+      const from = sql`least(${since.toISOString()}::timestamptz, ((${planStart})::timestamp - interval '1 day') at time zone 'UTC')`;
       return d
-        .select()
+        .select(summaryColumns)
+        .from(activity)
+        .where(and(eq(activity.userId, userId), gte(activity.startAt, from)))
+        .orderBy(asc(activity.startAt));
+    },
+
+    /** Activities that started in `[from, to)`, oldest first. */
+    between(from: Date, to: Date): Promise<ActivitySummary[]> {
+      return d
+        .select(summaryColumns)
         .from(activity)
         .where(and(eq(activity.userId, userId), gte(activity.startAt, from), lt(activity.startAt, to)))
         .orderBy(asc(activity.startAt));

@@ -46,6 +46,7 @@ describe("tenancy: user B cannot touch user A's data", () => {
     expect(await b.sessions.listForGoal(a.goal.id)).toEqual([]);
     expect(await b.activities.get(a.activity.id)).toBeNull();
     expect(await b.activities.list()).toEqual([]);
+    expect(await b.activities.sinceOrGoalStart(new Date("2020-01-01T00:00:00Z"), a.goal.id)).toEqual([]);
     expect(await b.activities.routePoints(a.activity.id)).toEqual([]);
     expect(await b.importTokens.list()).toEqual([]);
     expect(await b.rawImports.listRecent()).toEqual([]);

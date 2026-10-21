@@ -24,7 +24,6 @@ const act = (o: Partial<MetricActivity> & { localDate: string }): MetricActivity
   seconds: 1800,
   rpe: null,
   avgHr: null,
-  hrSeries: null,
   plannedSessionId: null,
   ...o,
 });

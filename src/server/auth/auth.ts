@@ -8,6 +8,9 @@ import { db } from "@/server/db/client";
 import * as schema from "@/server/db/schema";
 import { emailSender, passwordResetEmail } from "@/server/email";
 
+/** How long the signed session cookie is trusted before re-checking the database. */
+const SESSION_CACHE_SECONDS = 10 * 60;
+
 function createAuth() {
   return betterAuth({
     secret: env().BETTER_AUTH_SECRET,
@@ -30,6 +33,11 @@ function createAuth() {
         await emailSender().send(passwordResetEmail(user.email, url));
       },
       revokeSessionsOnPasswordReset: true,
+    },
+    session: {
+      // Signed cookie copy of the session, so page renders skip the session query. Server Components can't
+      // write cookies, so SessionKeepAlive refreshes it from the client. Revocations reach other devices within maxAge.
+      cookieCache: { enabled: true, maxAge: SESSION_CACHE_SECONDS },
     },
     user: {
       // All user data cascades from `user` via FKs, so deletion is a single row delete.

@@ -54,7 +54,7 @@ describe("POST /api/health-import — import", () => {
 
     const [a] = await scope.activities.list();
     expect(a).toMatchObject({ externalId: "8F2C5B1E-6A3D-4E7B-9C1A-2D4F6B8E0A13", source: "healthkit", km: 8.12, seconds: 2790, avgHr: 149 });
-    expect(a?.hrSeries).toHaveLength(4);
+    expect((await scope.activities.get(a?.id ?? ""))?.hrSeries).toHaveLength(4);
     expect(await scope.activities.routePoints(a?.id ?? "")).toHaveLength(4);
 
     const [raw] = await scope.rawImports.listRecent();

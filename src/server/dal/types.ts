@@ -17,6 +17,8 @@ export type PlannedSessionInput = Omit<InferInsertModel<typeof s.plannedSession>
 export type PlannedSessionPatch = Partial<Omit<PlannedSessionInput, "goalId">>;
 
 export type Activity = InferSelectModel<typeof s.activity>;
+/** An activity without its HR series, as returned by list queries. */
+export type ActivitySummary = Omit<Activity, "hrSeries">;
 export type ActivityInput = Omit<InferInsertModel<typeof s.activity>, Managed>;
 export type ActivityPatch = Partial<Pick<ActivityInput, "rpe" | "notes" | "plannedSessionId">>;
 export type RoutePoint = InferSelectModel<typeof s.routePoint>;
