@@ -7,6 +7,7 @@ import { ImportSection } from "@/components/import/import-section";
 import { FollowForm } from "@/components/custom-plans/follow-form";
 import { PlanReadOnly } from "@/components/custom-plans/plan-read-only";
 import { SettingsStep } from "@/components/onboarding/settings-step";
+import { dayLabel } from "@/components/plan/session-card";
 import { PlanOverview } from "@/components/plan/plan-overview";
 import { summarizeWarnings } from "@/lib/planning/describe";
 import { planInsights } from "@/services/plans";
@@ -157,7 +158,7 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
                 units={settings.units}
               />
               <p className="text-sm">
-                {followSource.doc.weeks.length} weeks{firstSession ? ` · first session ${firstSession}` : ""}
+                {followSource.doc.weeks.length} weeks{firstSession ? ` · first session ${dayLabel(firstSession)}` : ""}
               </p>
             </>
           ) : (

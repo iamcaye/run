@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cache } from "react";
 import { PlanReadOnly } from "@/components/custom-plans/plan-read-only";
 import { NarrowPage } from "@/components/ui/narrow-page";
 import { followPath, isShareToken } from "@/lib/custom-plans/share";
@@ -9,9 +10,7 @@ import { findSharedPlan } from "@/server/system/shared-plans";
 
 const ctaClass = "rounded-xl bg-accent px-4 py-2.5 text-center font-semibold text-accent-foreground";
 
-async function load(token: string) {
-  return isShareToken(token) ? findSharedPlan(token) : null;
-}
+const load = cache(async (token: string) => (isShareToken(token) ? findSharedPlan(token) : null));
 
 export async function generateMetadata({ params }: PageProps<"/p/[token]">): Promise<Metadata> {
   const plan = await load((await params).token);

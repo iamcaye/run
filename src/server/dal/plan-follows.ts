@@ -1,10 +1,10 @@
 import "server-only";
-import { and, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, ne, notExists, sql } from "drizzle-orm";
 import type { LocalDate } from "@/lib/time";
 import type { CustomPlanDoc } from "@/lib/custom-plans/types";
 import type { Db } from "@/server/db/client";
 import { mergeChanges, type PlanChange } from "@/lib/custom-plans/changes";
-import { goal, planFollow, planUpdateNotice, plannedSession } from "@/server/db/schema";
+import { activity, goal, planFollow, planUpdateNotice, plannedSession } from "@/server/db/schema";
 import { ownerColumns } from "./owner";
 import { assertOwnsFollow, assertOwnsPlan } from "./ownership";
 import type { CustomPlan, PlanFollow, PlannedSessionInput } from "./types";
@@ -43,7 +43,7 @@ export function planFollowsRepo(d: Db, userId: string) {
         .onConflictDoUpdate({
           target: [planFollow.userId, planFollow.customPlanId],
           targetWhere: sql`${planFollow.customPlanId} is not null`,
-          set: { planName: plan.name, snapshot: plan.doc, updatedAt: new Date() },
+          set: { planName: plan.name, snapshot: plan.doc, authorId: userId, updatedAt: new Date() },
         })
         .returning();
       if (!row) throw new Error("Failed to upsert plan follow");
@@ -135,6 +135,14 @@ export function planFollowsRepo(d: Db, userId: string) {
                 eq(plannedSession.userId, userId),
                 eq(plannedSession.followId, followId),
                 inArray(plannedSession.id, [...input.deleteIds]),
+                // Re-check frozenness: a session may have been edited or linked since the diff was computed.
+                eq(plannedSession.isUserEdited, false),
+                notExists(
+                  tx
+                    .select({ one: sql`1` })
+                    .from(activity)
+                    .where(and(eq(activity.userId, userId), eq(activity.plannedSessionId, plannedSession.id))),
+                ),
               ),
             );
         }

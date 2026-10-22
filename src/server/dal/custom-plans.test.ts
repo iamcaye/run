@@ -97,6 +97,15 @@ describe("planFollows.upsertForPlan", () => {
     expect(again.snapshot).toEqual(doc("Tempo"));
     expect((await scope.planFollows.getForPlan(plan.id))?.id).toBe(follow.id);
   });
+
+  it("repairs a NULL author_id left by older code", async () => {
+    const user = await createTestUser("follow-upsert-author");
+    const scope = forUser(user);
+    const { plan, follow } = await followFor(scope);
+    await db().update(planFollow).set({ authorId: null }).where(eq(planFollow.id, follow.id));
+    const again = await scope.planFollows.upsertForPlan(plan);
+    expect(again.authorId).toBe(user);
+  });
 });
 
 describe("active goal vs active follow", () => {
@@ -287,6 +296,46 @@ describe("planFollows.applySync", () => {
     const again = await scope.planNotices.listOpen();
     expect(again).toHaveLength(1);
     expect(again[0]!.id).not.toBe(open[0]!.id);
+  });
+
+  it("never deletes sessions that froze after the diff was computed", async () => {
+    const scope = forUser(await createTestUser("sync-frozen"));
+    const { follow } = await followFor(scope);
+    const owner = { followId: follow.id };
+    await scope.sessions.replace(owner, [], [
+      followSession("2026-11-10"),
+      followSession("2026-11-11", { isUserEdited: true }),
+      followSession("2026-11-12"), // linked below
+    ]);
+    const all = await scope.sessions.listFor(owner);
+    const id = (d: string) => all.find((s) => s.date === d)!.id;
+    await scope.activities.upsert({
+      externalId: `hk-${randomUUID()}`,
+      source: "healthkit",
+      startAt: new Date("2026-11-12T08:00:00Z"),
+      km: 5,
+      seconds: 1800,
+      avgHr: null,
+      maxHr: null,
+      rpe: null,
+      hrSeries: null,
+      plannedSessionId: id("2026-11-12"),
+      rawImportId: null,
+      notes: null,
+    });
+    const result = await scope.planFollows.applySync(follow.id, {
+      expectedSeq: follow.syncSeq,
+      snapshotVersion: 1,
+      planName: "My plan",
+      authorName: "Ana",
+      snapshot: doc(),
+      deleteIds: [id("2026-11-10"), id("2026-11-11"), id("2026-11-12")],
+      inserts: [],
+      notice: null,
+    });
+    expect(result).toBe("applied");
+    const dates = (await scope.sessions.listFor(owner)).map((s) => s.date);
+    expect(dates).toEqual(["2026-11-11", "2026-11-12"]);
   });
 
   it("deletes the open notice when the merge cancels out", async () => {

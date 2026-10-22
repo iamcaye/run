@@ -120,7 +120,7 @@ Agreed before Phase 1 (2026-10-18).
 - Disabled, regenerated and unknown tokens render the same "Link no longer active" page, so a token reveals nothing about whether it ever existed.
 - The public page exposes only plan name, description, weeks and the author's display name: never email, id, activities or other plans. All cross-user reads live in `src/server/system/shared-plans.ts`; every function takes its grant.
 - A follow is the grant for live reads: a follower reads the author's current plan through their `plan_follow` row, and the dashboard/plan notices need no copy of the plan.
-- Author saves propagate eagerly through `after()` (bounded concurrency, `SHARING.propagateConcurrency`) with a lazy catch-up on the follower's dashboard load. Both are guarded by `sync_seq`, so a race or repeat applies each version once. Frozen sessions (past, linked to an activity, user-edited) are never touched.
+- Author saves propagate eagerly through `after()` (bounded concurrency, `SHARING.propagateConcurrency`) with a lazy catch-up on the follower's dashboard and `/plan` loads. Both are guarded by `sync_seq`, so a race or repeat applies each version once. Frozen sessions (past, linked to an activity, user-edited) are never touched.
 - One open update notice per follow: further author edits merge into it until the follower dismisses it.
 - If the author deletes the plan or their account, the follow becomes a detached copy (`on delete set null`, with `author_name` kept for display); the follower's sessions stay.
 - No unfollow in v2: removing a follow would cascade-delete its past sessions. Stopping the plan or duplicating it into an editable copy covers the use cases.
