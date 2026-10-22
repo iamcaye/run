@@ -4,15 +4,21 @@ import { goalToFormDefaults } from "@/components/goals/goal-defaults";
 import { emptyGoalDefaults, GoalForm } from "@/components/goals/goal-form";
 import { GoalFacts } from "@/components/goals/goal-summary";
 import { ImportSection } from "@/components/import/import-section";
+import { FollowForm } from "@/components/custom-plans/follow-form";
+import { PlanReadOnly } from "@/components/custom-plans/plan-read-only";
 import { SettingsStep } from "@/components/onboarding/settings-step";
+import { dayLabel } from "@/components/plan/session-card";
 import { PlanOverview } from "@/components/plan/plan-overview";
 import { summarizeWarnings } from "@/lib/planning/describe";
 import { planInsights } from "@/services/plans";
 import { Card, SubmitButton } from "@/components/ui/form";
 import { addDays } from "@/lib/time";
 import { createGoalAction, updateGoalAction } from "@/server/actions/goals";
-import { finishOnboardingAction } from "@/server/actions/onboarding";
+import { isShareToken } from "@/lib/custom-plans/share";
+import { finishOnboardingAction, startSharedPlanAction } from "@/server/actions/onboarding";
 import { requireUserContext } from "@/server/context";
+import { findSharedPlan } from "@/server/system/shared-plans";
+import { resolveFollowSource } from "@/services/training";
 
 export const metadata = { title: "Get started · Race Training" };
 
@@ -23,15 +29,33 @@ const STEPS = [
   { key: "import", label: "Apple Watch sync" },
 ] as const;
 
-const Step = z.enum(STEPS.map((s) => s.key)).catch("settings");
+const PLAN_STEPS = [
+  { key: "settings", label: "Your week" },
+  { key: "start", label: "Start this plan" },
+  { key: "plan", label: "Plan preview" },
+  { key: "import", label: "Apple Watch sync" },
+] as const;
 
 export default async function OnboardingPage({ searchParams }: PageProps<"/onboarding">) {
-  const step = Step.parse((await searchParams).step);
+  const params = await searchParams;
+  const token = isShareToken(params.plan) ? params.plan : null;
+  const steps = token ? PLAN_STEPS : STEPS;
+  const step = z
+    .enum(steps.map((s) => s.key) as [string, ...string[]])
+    .catch("settings")
+    .parse(params.step);
   const { scope, settings, today } = await requireUserContext();
   const active = await scope.goals.getActive();
-  const index = STEPS.findIndex((s) => s.key === step);
+  const index = steps.findIndex((s) => s.key === step);
+  const planQuery = token ? `&plan=${token}` : "";
+
+  const sharedPlan = token && step === "start" ? await findSharedPlan(token) : null;
+  const activeFollow = token && (step === "start" || step === "plan") ? await scope.planFollows.getActive() : null;
+  const alreadyFollowing = Boolean(sharedPlan && activeFollow && activeFollow.customPlanId === sharedPlan.planId);
+  const followSource = token && step === "plan" && activeFollow ? await resolveFollowSource(scope, activeFollow) : null;
+  const firstSession = followSource && activeFollow ? (await scope.sessions.listFor({ followId: activeFollow.id }))[0]?.date : undefined;
   const preview =
-    step === "plan" && active
+    !token && step === "plan" && active
       ? await planInsights(scope, active, settings, today, (await scope.sessions.listForGoal(active.id))[0]?.date)
       : null;
 
@@ -39,12 +63,12 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
     <div className="mx-auto flex w-full max-w-lg flex-col gap-5">
       <div>
         <p className="text-sm text-muted">
-          Step {index + 2} of {STEPS.length + 1} · account created ✓
+          Step {index + 2} of {steps.length + 1} · account created ✓
         </p>
-        <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">{STEPS[index]?.label}</h1>
+        <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">{steps[index]?.label}</h1>
       </div>
       <ol className="flex gap-1" aria-label="Progress">
-        {STEPS.map((s, i) => (
+        {steps.map((s, i) => (
           <li key={s.key} className={`h-1.5 flex-1 rounded-full ${i <= index ? "bg-accent" : "bg-border"}`}>
             <span className="sr-only">
               {s.label}
@@ -57,7 +81,40 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
       {step === "settings" ? (
         <Card>
           <p className="text-sm text-muted">Tell us when you can run. You can change this any time in Settings.</p>
-          <SettingsStep settings={settings} />
+          <SettingsStep settings={settings} plan={token ?? undefined} />
+        </Card>
+      ) : null}
+
+      {step === "start" && token ? (
+        <Card>
+          {!sharedPlan ? (
+            <>
+              <p className="text-sm">This plan&apos;s link is no longer active.</p>
+              <Link href="/onboarding?step=goal" className="self-start text-sm font-medium text-accent">
+                Set a goal instead →
+              </Link>
+            </>
+          ) : alreadyFollowing ? (
+            <>
+              <p className="text-sm">You&apos;re all set.</p>
+              <Link href={`/onboarding?step=plan${planQuery}`} className="self-start text-sm font-medium text-accent">
+                Continue →
+              </Link>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-col gap-1">
+                <p className="font-condensed text-2xl leading-none font-extrabold uppercase">{sharedPlan.name}</p>
+                <p className="text-sm text-muted">by {sharedPlan.authorName}</p>
+              </div>
+              <FollowForm
+                action={startSharedPlanAction.bind(null, token)}
+                today={today}
+                showActivate={false}
+                replacesActive={false}
+              />
+            </>
+          )}
         </Card>
       ) : null}
 
@@ -89,7 +146,36 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
         </Card>
       ) : null}
 
-      {step === "plan" ? (
+      {step === "plan" && token ? (
+        <Card>
+          {followSource ? (
+            <>
+              <PlanReadOnly
+                name={followSource.planName}
+                authorName={followSource.authorName}
+                description={followSource.description}
+                doc={followSource.doc}
+                units={settings.units}
+              />
+              <p className="text-sm">
+                {followSource.doc.weeks.length} weeks{firstSession ? ` · first session ${dayLabel(firstSession)}` : ""}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm">Start the plan first to see it here.</p>
+          )}
+          <div className="flex gap-3">
+            <Link href={`/onboarding?step=start${planQuery}`} className="text-sm text-muted">
+              ← Back
+            </Link>
+            <Link href={`/onboarding?step=import${planQuery}`} className="text-sm font-medium text-accent">
+              Continue →
+            </Link>
+          </div>
+        </Card>
+      ) : null}
+
+      {step === "plan" && !token ? (
         <Card>
           {active ? <GoalFacts goal={active} units={settings.units} today={today} /> : null}
           {preview ? (

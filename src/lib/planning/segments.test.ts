@@ -29,3 +29,19 @@ describe("structureSegments", () => {
     expect(segs).toEqual([{ weight: 0.5, work: true }]);
   });
 });
+
+describe("structureSegments custom blocks", () => {
+  it("weights time-based blocks and distance recoveries", () => {
+    const segs = structureSegments([
+      { kind: "warmup", seconds: 600 },
+      { kind: "reps", reps: 2, repSeconds: 240, recoveryKm: 0.2, recoveryKind: "jog" },
+    ]);
+    expect(segs.map((s) => s.work)).toEqual([false, true, false, true]);
+    expect(segs[0]!.weight).toBeCloseTo(600 / 360);
+    expect(segs[2]!.weight).toBeCloseTo(0.2);
+  });
+  it("treats a steady block with an RPE >= 6 or zone >= 3 target as work", () => {
+    expect(structureSegments([{ kind: "steady", km: 3, target: { kind: "rpe", rpe: 7 } }])[0]!.work).toBe(true);
+    expect(structureSegments([{ kind: "steady", km: 3, target: { kind: "hr_zone", zone: 2 } }])[0]!.work).toBe(false);
+  });
+});

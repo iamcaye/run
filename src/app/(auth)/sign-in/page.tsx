@@ -1,15 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, type FormEvent } from "react";
 import { authClient } from "@/components/auth/auth-client";
 import { AuthCard, Button, Field, FormError } from "@/components/ui/form";
+import { isShareToken, safeNextPath } from "@/lib/custom-plans/share";
 
 export default function SignInPage() {
+  return (
+    <Suspense>
+      <SignInForm />
+    </Suspense>
+  );
+}
+
+function SignInForm() {
   const router = useRouter();
+  const next = safeNextPath(useSearchParams().get("next"));
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  const planToken = next?.split("/")[2];
+  const signUpHref = isShareToken(planToken) ? `/sign-up?plan=${planToken}` : "/sign-up";
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -22,7 +35,7 @@ export default function SignInPage() {
     });
     setPending(false);
     if (error) return setError(error.message ?? "Could not sign in");
-    router.replace("/dashboard");
+    router.replace(next ?? "/dashboard");
     router.refresh();
   }
 
@@ -44,7 +57,7 @@ export default function SignInPage() {
       </form>
       <div className="flex justify-between text-sm text-muted">
         <Link href="/forgot-password">Forgot password?</Link>
-        <Link href="/sign-up">Create account</Link>
+        <Link href={signUpHref}>Create account</Link>
       </div>
     </AuthCard>
   );

@@ -87,8 +87,8 @@ describe("plan persistence", () => {
     if (!s) throw new Error("fixture");
     const r = await editSession(intruder, s.id, { date: s.date, type: "easy", targetKm: 1, effortDescription: null }, owner.settings, today);
     expect(r).toMatchObject({ ok: false, code: "not_found" });
-    expect(await intruder.sessions.linkedSessionIds(owner.goal.id)).toEqual(new Set());
-    await expect(intruder.sessions.replace(owner.goal.id, [s.id], [])).rejects.toThrow();
+    expect(await intruder.sessions.linkedSessionIds({ goalId: owner.goal.id })).toEqual(new Set());
+    await expect(intruder.sessions.replace({ goalId: owner.goal.id }, [s.id], [])).rejects.toThrow();
     expect(await owner.scope.sessions.get(s.id)).not.toBeNull();
   });
 });

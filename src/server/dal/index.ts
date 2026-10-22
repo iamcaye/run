@@ -4,12 +4,17 @@ import { db, type Db } from "@/server/db/client";
 import { user } from "@/server/db/schema";
 import { activitiesRepo } from "./activities";
 import { adjustmentRunsRepo, adjustmentsRepo } from "./adjustments";
+import { customPlansRepo } from "./custom-plans";
 import { goalsRepo } from "./goals";
 import { importTokensRepo, rawImportsRepo } from "./imports";
+import { planNoticesRepo } from "./plan-notices";
+import { planFollowsRepo } from "./plan-follows";
 import { profileRepo } from "./profile";
 import { sessionsRepo } from "./sessions";
 import { settingsRepo } from "./settings";
+import { workoutsRepo } from "./workouts";
 
+export { ownerOf } from "./owner";
 export { NotOwnedError } from "./ownership";
 export type * from "./types";
 
@@ -30,6 +35,10 @@ export function forUser(userId: string, database: Db = db()) {
     rawImports: rawImportsRepo(database, userId),
     adjustments: adjustmentsRepo(database, userId),
     adjustmentRuns: adjustmentRunsRepo(database, userId),
+    workouts: workoutsRepo(database, userId),
+    customPlans: customPlansRepo(database, userId),
+    planFollows: planFollowsRepo(database, userId),
+    planNotices: planNoticesRepo(database, userId),
     /** Deletes the user; FKs cascade to every user-owned table, including raw imports. */
     async deleteAccount(): Promise<void> {
       await database.delete(user).where(eq(user.id, userId));

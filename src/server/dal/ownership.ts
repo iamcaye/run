@@ -1,7 +1,8 @@
 import "server-only";
 import { and, eq } from "drizzle-orm";
 import type { Db } from "@/server/db/client";
-import { goal, importToken, plannedSession, rawImport } from "@/server/db/schema";
+import { customPlan, goal, importToken, planFollow, plannedSession, rawImport } from "@/server/db/schema";
+import type { SessionOwner } from "./types";
 
 export class NotOwnedError extends Error {
   constructor(what: string) {
@@ -44,4 +45,26 @@ export async function assertOwnsRawImport(d: Db, userId: string, id: string): Pr
     .from(rawImport)
     .where(and(eq(rawImport.id, id), eq(rawImport.userId, userId)));
   if (!row) throw new NotOwnedError("Raw import");
+}
+
+export async function assertOwnsFollow(d: Db, userId: string, followId: string): Promise<void> {
+  const [row] = await d
+    .select({ id: planFollow.id })
+    .from(planFollow)
+    .where(and(eq(planFollow.id, followId), eq(planFollow.userId, userId)));
+  if (!row) throw new NotOwnedError("Plan follow");
+}
+
+export async function assertOwnsPlan(d: Db, userId: string, planId: string): Promise<void> {
+  const [row] = await d
+    .select({ id: customPlan.id })
+    .from(customPlan)
+    .where(and(eq(customPlan.id, planId), eq(customPlan.userId, userId)));
+  if (!row) throw new NotOwnedError("Custom plan");
+}
+
+export function assertOwnsOwner(d: Db, userId: string, owner: SessionOwner): Promise<void> {
+  return "goalId" in owner
+    ? assertOwnsGoal(d, userId, owner.goalId)
+    : assertOwnsFollow(d, userId, owner.followId);
 }

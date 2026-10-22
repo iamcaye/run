@@ -1,10 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { addDays } from "@/lib/time";
 import { forUser } from "@/server/dal";
 import { createTestUser, goalInput } from "@/test/factories";
 import { getDashboard } from "./dashboard";
 import { createGoal } from "./goals";
 import { createPlanIfMissing } from "./plans";
+import { propagatePlanUpdate, followSharedPlan, updatePlanShare } from "./sharing";
+import { activateCustomPlan, catchUpActiveFollow } from "./training";
 
 const today = "2026-10-18"; // Sunday
 
@@ -104,5 +106,116 @@ describe("dashboard service", () => {
     expect(d.volume.reduce((s, w) => s + w.actualKm, 0)).toBe(0);
     expect(d.prediction).toBeNull();
     await createPlanIfMissing(a.scope, a.goal, a.settings, today); // no-op: plan exists
+  });
+});
+
+describe("dashboard with a custom plan active", () => {
+  const easy = (km: number) => ({ name: "Easy", type: "easy" as const, notes: null, steps: [{ kind: "steady" as const, km }] });
+  const week = (id: string, days: number[], km = 5) => ({
+    id,
+    days: Array.from({ length: 7 }, (_, i) => (days.includes(i + 1) ? easy(km) : null)),
+  });
+
+  async function following(start: string) {
+    const scope = forUser(await createTestUser("dash-plan"));
+    const settings = await scope.settings.get();
+    const created = await scope.customPlans.create({ name: "Spring base", description: null });
+    const doc = { weeks: [week("w1", [2, 4]), week("w2", [2, 4, 6], 6), week("w3", [2], 4)] };
+    const saved = await scope.customPlans.save(created.id, { name: "Spring base", description: null, doc }, created.version);
+    if (!saved || saved === "conflict") throw new Error("plan save failed");
+    const r = await activateCustomPlan(scope, saved.id, start, start);
+    if (!r.ok) throw new Error(r.message);
+    return { scope, settings, plan: saved, follow: r.value };
+  }
+
+  it("shows the plan, its week number and no goal metrics", async () => {
+    // Starts Tuesday 2026-10-20; the second plan week is Mon 26 Oct – Sun 1 Nov.
+    const { scope, settings, plan, follow } = await following("2026-10-20");
+    const d = await getDashboard(scope, settings, "2026-10-28");
+    expect(d.goal).toBeNull();
+    expect(d.plan).toEqual({ followId: follow.id, name: "Spring base", customPlanId: plan.id, endDate: "2026-11-03", finished: false });
+    expect(d.weekNumber).toBe(2);
+    expect(d.totalWeeks).toBe(3);
+    expect(d.daysToRace).toBeNull();
+    expect(d.prediction).toBeNull();
+    expect(d.pendingAdjustments).toEqual([]);
+    expect(d.thisWeek.map((s) => s.date)).toEqual(["2026-10-27", "2026-10-29", "2026-10-31"]);
+  });
+
+  it("is not yet numbered before the plan starts", async () => {
+    const { scope, settings } = await following("2026-10-22");
+    const d = await getDashboard(scope, settings, "2026-10-22");
+    expect(d.weekNumber).toBe(1);
+    const before = await getDashboard(scope, settings, "2026-10-21");
+    expect(before.plan?.name).toBe("Spring base");
+    expect(before.weekNumber).toBeNull();
+  });
+
+  it("is finished once the last session is past", async () => {
+    const { scope, settings } = await following("2026-10-20");
+    expect((await getDashboard(scope, settings, "2026-11-03")).plan?.finished).toBe(false);
+    const d = await getDashboard(scope, settings, "2026-11-04");
+    expect(d.plan?.finished).toBe(true);
+    expect(d.weekNumber).toBe(3);
+  });
+
+  it("goal users get no plan", async () => {
+    const { scope, settings } = await setup();
+    expect((await getDashboard(scope, settings, today)).plan).toBeNull();
+  });
+});
+
+describe("dashboard plan update notices", () => {
+  const monday = "2026-10-19";
+  beforeAll(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-19T10:00:00Z"));
+  });
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
+  const run = (km: number) => ({ name: "Easy", type: "easy" as const, notes: null, steps: [{ kind: "steady" as const, km }] });
+  const week = (id: string, km: number) => ({ id, days: Array.from({ length: 7 }, (_, i) => ([2, 4].includes(i + 1) ? run(km) : null)) });
+
+  async function bobFollowsAlice() {
+    const alice = forUser(await createTestUser("alice"));
+    const bob = forUser(await createTestUser("bob"));
+    const created = await alice.customPlans.create({ name: "Shared", description: null });
+    const saved = await alice.customPlans.save(created.id, { name: "Shared", description: null, doc: { weeks: [week("w1", 5), week("w2", 5)] } }, created.version);
+    if (!saved || saved === "conflict") throw new Error("save failed");
+    const share = await updatePlanShare(alice, saved.id, "enable");
+    if (!share?.shareToken) throw new Error("share failed");
+    const r = await followSharedPlan(bob, share.shareToken, { activate: true, startDate: monday }, monday);
+    if (!r.ok) throw new Error("follow failed");
+    const change = async () => {
+      const again = await alice.customPlans.save(saved.id, { name: "Shared", description: null, doc: { weeks: [week("w1", 5), week("w2", 9)] } }, saved.version);
+      if (!again || again === "conflict") throw new Error("save failed");
+    };
+    return { alice, bob, plan: saved, change };
+  }
+
+  it("surfaces the author's update as a notice until it is dismissed", async () => {
+    const { alice, bob, plan, change } = await bobFollowsAlice();
+    const settings = await bob.settings.get();
+    expect((await getDashboard(bob, settings, monday)).planNotices).toEqual([]);
+    await change();
+    await propagatePlanUpdate(plan.id, alice.userId);
+    const d = await getDashboard(bob, settings, monday);
+    expect(d.planNotices).toHaveLength(1);
+    expect(d.planNotices[0]?.headline.startsWith("alice updated your plan:")).toBe(true);
+    expect(d.planNotices[0]?.changes.length).toBeGreaterThan(0);
+    await bob.planNotices.dismiss(d.planNotices[0]!.id);
+    expect((await getDashboard(bob, settings, monday)).planNotices).toEqual([]);
+  });
+
+  it("catch-up yields the notice when propagation never ran", async () => {
+    const { bob, change } = await bobFollowsAlice();
+    const settings = await bob.settings.get();
+    await change();
+    await catchUpActiveFollow(bob, monday);
+    const d = await getDashboard(bob, settings, monday);
+    expect(d.planNotices).toHaveLength(1);
+    expect(d.planNotices[0]?.headline.startsWith("alice updated your plan:")).toBe(true);
   });
 });

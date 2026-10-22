@@ -28,7 +28,7 @@ export type CalendarDay = {
 export type CalendarWeek = {
   start: LocalDate;
   days: CalendarDay[];
-  plan: { number: number; phase: Phase; plannedKm: number; actualKm: number; isCurrent: boolean } | null;
+  plan: { number: number; phase: Phase | null; plannedKm: number; actualKm: number; isCurrent: boolean } | null;
 };
 export type MonthGrid = { month: YearMonth; weeks: CalendarWeek[]; prev: YearMonth | null; next: YearMonth | null };
 
@@ -64,7 +64,7 @@ export function buildMonthGrid(input: {
   month: YearMonth;
   weekStart: IsoWeekday;
   today: LocalDate;
-  sessions: readonly { id: string; date: LocalDate; type: SessionType; targetKm: number; phase: Phase; structure: SessionStructure | null }[];
+  sessions: readonly { id: string; date: LocalDate; type: SessionType; targetKm: number; phase: Phase | null; structure: SessionStructure | null }[];
   activities: readonly Pick<MetricActivity, "id" | "localDate" | "km" | "plannedSessionId">[];
   /** Sessions linked to an activity anywhere (the grid window only sees some activities). */
   linkedSessionIds?: ReadonlySet<string>;

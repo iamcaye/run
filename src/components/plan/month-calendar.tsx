@@ -115,10 +115,11 @@ function WeekCell({ plan, units }: { plan: CalendarWeek["plan"]; units: Units })
   if (!plan) return <div />;
   return (
     <div
-      className={`flex flex-col justify-center gap-0.5 rounded-xl border border-l-4 border-border bg-surface px-2 py-1.5 ${PHASE_BORDER[plan.phase]} ${plan.isCurrent ? "ring-2 ring-accent" : ""}`}
+      className={`flex flex-col justify-center gap-0.5 rounded-xl border border-l-4 border-border bg-surface px-2 py-1.5 ${plan.phase ? PHASE_BORDER[plan.phase] : ""} ${plan.isCurrent ? "ring-2 ring-accent" : ""}`}
     >
       <span className={`text-xs ${plan.isCurrent ? "font-bold text-accent" : "text-muted"}`}>
-        Week {plan.number} · {PHASE_LABELS[plan.phase]}
+        Week {plan.number}
+        {plan.phase ? ` · ${PHASE_LABELS[plan.phase]}` : ""}
       </span>
       <span className="font-condensed text-base leading-none font-bold">
         {toDisplayDistance(plan.actualKm, units).toFixed(0)}
@@ -127,7 +128,7 @@ function WeekCell({ plan, units }: { plan: CalendarWeek["plan"]; units: Units })
           / {toDisplayDistance(plan.plannedKm, units).toFixed(0)} {units}
         </small>
       </span>
-      <span className={`h-1 w-full rounded-full ${PHASE_BG[plan.phase]}`} aria-hidden="true" />
+      <span className={`h-1 w-full rounded-full ${plan.phase ? PHASE_BG[plan.phase] : "bg-border"}`} aria-hidden="true" />
     </div>
   );
 }

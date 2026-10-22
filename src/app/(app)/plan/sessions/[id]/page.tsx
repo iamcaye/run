@@ -15,8 +15,9 @@ export default async function SessionPage({ params }: PageProps<"/plan/sessions/
   const { id } = await params;
   const { scope, settings, today } = await requireUserContext();
   const session = z.uuid().safeParse(id).success ? await scope.sessions.get(id) : null;
-  const goal = session ? await scope.goals.get(session.goalId) : null;
-  if (!session || !goal || session.type === "race") notFound();
+  // Goal sessions need their goal (race day bounds the date); custom-plan sessions have no bound.
+  const goal = session?.goalId ? await scope.goals.get(session.goalId) : null;
+  if (!session || (session.goalId && !goal) || session.type === "race") notFound();
 
   return (
     <NarrowPage>
@@ -29,7 +30,7 @@ export default async function SessionPage({ params }: PageProps<"/plan/sessions/
         <SessionEditForm
           action={editSessionAction.bind(null, session.id)}
           units={settings.units}
-          maxDate={goal.raceDate}
+          maxDate={goal?.raceDate}
           defaults={{
             date: session.date,
             type: session.type,

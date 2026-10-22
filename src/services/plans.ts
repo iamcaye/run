@@ -6,7 +6,7 @@ import { generatePlan, type GeneratePlanResult } from "@/lib/planning/generate";
 import { derivePaces } from "@/lib/planning/steps/paces";
 import type { PlanGoal, PlanSettings, RecentActivity } from "@/lib/planning/types";
 import { addDays, isLocalDate, type IsoWeekday, type LocalDate } from "@/lib/time";
-import type { Goal, PlannedSession, Settings, UserScope } from "@/server/dal";
+import { ownerOf, type Goal, type PlannedSession, type Settings, type UserScope } from "@/server/dal";
 
 export function toPlanGoal(goal: Goal): PlanGoal {
   return {
@@ -75,13 +75,22 @@ export async function planInsights(
   });
 }
 
-/** Generates and stores a plan for a goal that has none yet. Returns null if it already has one. */
+/** Generated sessions minus those on `skipDates` (days another owner's sessions keep). */
+function storable<T extends { date: LocalDate }>(sessions: readonly T[], skipDates?: ReadonlySet<LocalDate>) {
+  return skipDates?.size ? sessions.filter((s) => !skipDates.has(s.date)) : sessions;
+}
+
+/**
+ * Generates and stores a plan for a goal that has none yet. Returns null if it already has one.
+ * Nothing is stored on `skipDates`.
+ */
 export async function createPlanIfMissing(
   scope: UserScope,
   goal: Goal,
   settings: Settings,
   today: LocalDate,
   startDate: LocalDate = today,
+  skipDates?: ReadonlySet<LocalDate>,
 ): Promise<GeneratePlanResult | null> {
   const existing = await scope.sessions.listForGoal(goal.id);
   if (existing.length > 0) return null;
@@ -92,23 +101,25 @@ export async function createPlanIfMissing(
     today,
     recentActivities: await recentActivities(scope, settings, today),
   });
-  await scope.sessions.replace(goal.id, [], plan.sessions.map((s) => ({ ...s, isUserEdited: false })));
+  await scope.sessions.replace({ goalId: goal.id }, [], storable(plan.sessions, skipDates).map((s) => ({ ...s, isUserEdited: false })));
   return plan;
 }
 
 /**
  * Rebuilds sessions from today on. Past sessions, user-edited ones and ones with a linked activity
  * are kept as they are. The curve keeps its original start so week numbering stays stable.
+ * Nothing new is stored on `skipDates`.
  */
 export async function regenerateFuture(
   scope: UserScope,
   goal: Goal,
   settings: Settings,
   today: LocalDate,
+  skipDates?: ReadonlySet<LocalDate>,
 ): Promise<GeneratePlanResult> {
   const [sessions, linked] = await Promise.all([
     scope.sessions.listForGoal(goal.id),
-    scope.sessions.linkedSessionIds(goal.id),
+    scope.sessions.linkedSessionIds({ goalId: goal.id }),
   ]);
   const startDate = sessions[0]?.date && sessions[0].date < today ? sessions[0].date : today;
   const plan = generatePlan({
@@ -126,7 +137,11 @@ export async function regenerateFuture(
       hasActivity: linked.has(s.id),
     })),
   });
-  await scope.sessions.replace(goal.id, plan.deleteIds, plan.sessions.map((s) => ({ ...s, isUserEdited: false })));
+  await scope.sessions.replace(
+    { goalId: goal.id },
+    plan.deleteIds,
+    storable(plan.sessions, skipDates).map((s) => ({ ...s, isUserEdited: false })),
+  );
   return plan;
 }
 
@@ -151,13 +166,14 @@ export async function editSession(
 ): Promise<EditResult> {
   const session = await scope.sessions.get(sessionId);
   if (!session) return { ok: false, code: "not_found", message: "Session not found" };
-  const goal = await scope.goals.get(session.goalId);
-  if (!goal) return { ok: false, code: "not_found", message: "Session not found" };
-  if (!isLocalDate(edit.date) || edit.date > goal.raceDate) {
-    return { ok: false, code: "invalid", message: "Pick a date on or before race day" };
+  // Goal sessions stay on or before race day; custom-plan (follow) sessions can go anywhere.
+  const goal = session.goalId ? await scope.goals.get(session.goalId) : null;
+  if (session.goalId && !goal) return { ok: false, code: "not_found", message: "Session not found" };
+  if (!isLocalDate(edit.date) || (goal && edit.date > goal.raceDate)) {
+    return { ok: false, code: "invalid", message: goal ? "Pick a date on or before race day" : "Pick a valid date" };
   }
   if (edit.date !== session.date) {
-    const sameDay = await scope.sessions.listForGoal(goal.id, { from: edit.date, to: edit.date });
+    const sameDay = await scope.sessions.listFor(ownerOf(session), { from: edit.date, to: edit.date });
     if (sameDay.some((s) => s.id !== session.id)) {
       return { ok: false, code: "conflict", message: "There's already a session on that day" };
     }
@@ -165,7 +181,8 @@ export async function editSession(
 
   const typeChanged = edit.type !== session.type;
   let targetPaceSecPerKm = session.targetPaceSecPerKm;
-  if (typeChanged) {
+  // Goal sessions get the goal's pace for the new type; follow sessions keep the plan's target.
+  if (typeChanged && goal) {
     const { paces } = derivePaces({ goal: toPlanGoal(goal), recentActivities: await recentActivities(scope, settings, today), today });
     const p = paces?.[edit.type] ?? null;
     targetPaceSecPerKm = p === null ? null : Math.round(p);

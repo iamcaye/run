@@ -12,6 +12,9 @@ Agreed before Phase 1 (2026-10-18).
 - `rate_limit` (fixed-window counters in Postgres) — the only non-user-owned app table.
 - `plan_adjustment.status` gains `superseded`. On accept, each change's `before` is compared with the current session; drifted sessions are skipped and reported.
 - Weekdays are ISO (1 = Mon … 7 = Sun). Local calendar dates are Postgres `date` handled as `YYYY-MM-DD` strings.
+- Custom plans (migration `0002_custom_plans`): `workout` (library), `custom_plan` (doc jsonb + optimistic `version`, bumped on every save; a stale save returns `"conflict"`), `plan_follow` (a user following a plan from `startDate`, with a `snapshot` of the doc; `custom_plan_id` is `ON DELETE SET NULL` so deleting a plan keeps its follow and sessions). One follow per (user, plan) and at most one active follow per user, both partial unique indexes.
+- `planned_session` belongs to a goal **or** a follow: `goal_id` is nullable, `follow_id` added (cascade), and the check `planned_session_one_owner_chk` requires exactly one. The DAL takes a `SessionOwner` (`{ goalId } | { followId }`; `ownerOf(session)` derives it). `phase` is nullable — custom-plan sessions have no periodisation phase. `source_key` records the plan slot a follow session was synced from.
+- A user has one active plan at a time across both tables: activating a follow moves the active goal to `upcoming` and other follows to `inactive`; activating a goal sets the active follow `inactive` — each in one transaction.
 
 ## Tenancy
 - All user data goes through `forUser(userId)` (`src/server/dal`). ESLint forbids importing the raw db elsewhere (allowed: `server/dal`, `server/system`, `server/db`, `server/auth`, `services`, `test`, `scripts`).
@@ -111,3 +114,13 @@ Agreed before Phase 1 (2026-10-18).
 ## Fixtures
 - Health Auto Export fixtures are provisional (`src/lib/import/__fixtures__/hae/provisional-*.json`) except `real-v2-es.json`, an anonymized export from a Spanish iPhone.
 - HAE sends workout names in the phone's language ("Outdoor Run" arrives as "Exterior Ejecutar"), so runs are recognised by English and Spanish names (`IMPORT.runningWorkoutPattern`). Imports sent before a name was recognised come back with `pnpm reprocess`.
+
+## Plan sharing (custom plans phase 2)
+- The share token lives on `custom_plan`, in plaintext (16 bytes, `SHARING.tokenBytes`): the author must be able to see the link again. Regenerating replaces it; disabling keeps it but turns it off.
+- Disabled, regenerated and unknown tokens render the same "Link no longer active" page, so a token reveals nothing about whether it ever existed.
+- The public page exposes only plan name, description, weeks and the author's display name: never email, id, activities or other plans. All cross-user reads live in `src/server/system/shared-plans.ts`; every function takes its grant.
+- A follow is the grant for live reads: a follower reads the author's current plan through their `plan_follow` row, and the dashboard/plan notices need no copy of the plan.
+- Author saves propagate eagerly through `after()` (bounded concurrency, `SHARING.propagateConcurrency`) with a lazy catch-up on the follower's dashboard and `/plan` loads. Both are guarded by `sync_seq`, so a race or repeat applies each version once. Frozen sessions (past, linked to an activity, user-edited) are never touched.
+- One open update notice per follow: further author edits merge into it until the follower dismisses it.
+- If the author deletes the plan or their account, the follow becomes a detached copy (`on delete set null`, with `author_name` kept for display); the follower's sessions stay.
+- No unfollow in v2: removing a follow would cascade-delete its past sessions. Stopping the plan or duplicating it into an editable copy covers the use cases.

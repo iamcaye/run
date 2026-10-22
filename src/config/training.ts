@@ -228,3 +228,49 @@ export const USER_DEFAULTS = {
   longRunDay: 7,
   maxRunsPerWeek: 4,
 } as const;
+
+/** Rough pace assumptions used to estimate distance/time of custom workouts. */
+export const WORKOUT_ESTIMATE = {
+  /** Warm-up, cool-down, untargeted steady, Z1–2, RPE ≤ 4. */
+  easySecPerKm: 360,
+  secPerKmByZone: { 1: 390, 2: 360, 3: 315, 4: 285, 5: 260 },
+  secPerKmByRpe: [/* 1 */ 390, 390, 375, 360, 330, 315, 300, 285, 270, /* 10 */ 260],
+  untargetedRepSecPerKm: 285,
+  /** `null` = stand still: covers no distance. */
+  recoverySecPerKm: { jog: 420, walk: 600, stand: null },
+} as const;
+
+export const WORKOUT_LIMITS = {
+  maxWeeks: 52,
+  maxSteps: 30,
+  maxReps: 50,
+  maxKm: 100,
+  maxSeconds: 21_600,
+  minPaceSecPerKm: 120,
+  maxPaceSecPerKm: 900,
+  nameMax: 80,
+  notesMax: 500,
+  weekIdMax: 64,
+} as const;
+
+/** −/+ increments of the workout editor (distances in the user's units, times in seconds). */
+export const EDITOR_STEPS = { distance: 0.5, repDistanceKm: 0.1, repDistanceMi: 0.1, blockSeconds: 30, recoverySeconds: 15, paceSeconds: 5 };
+
+/** Defaults of the workout editor: new blocks (km / seconds) and freshly picked targets. */
+export const EDITOR_DEFAULTS = {
+  warmupKm: 2,
+  cooldownKm: 2,
+  steadyKm: 5,
+  reps: { reps: 6, repKm: 1, recoverySeconds: 120, recoveryKind: "jog" },
+  /** Target picked on a repeat ("work") vs. a warm-up / run / cool-down ("easy") block. */
+  zone: { work: 4, easy: 2 },
+  rpe: { work: 7, easy: 3 },
+  /** Smallest value a typed input accepts (distance in user units). */
+  minDistance: 0.01,
+  minSeconds: 1,
+  /** Stored paces (sec/km) keep this precision so typed min/mi paces redisplay exactly. */
+  paceResolutionSec: 0.01,
+} as const;
+
+/** Plan sharing: share-link token size and how many followers' sessions are synced at once. */
+export const SHARING = { tokenBytes: 16, propagateConcurrency: 4 } as const;

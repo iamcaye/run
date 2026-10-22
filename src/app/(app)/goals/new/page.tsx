@@ -4,12 +4,14 @@ import { NarrowPage } from "@/components/ui/narrow-page";
 import { addDays } from "@/lib/time";
 import { createGoalAction } from "@/server/actions/goals";
 import { requireUserContext } from "@/server/context";
+import { getActiveTraining } from "@/services/training";
 
 export const metadata = { title: "New goal · Race Training" };
 
 export default async function NewGoalPage() {
   const { scope, settings, today } = await requireUserContext();
-  const hasActive = (await scope.goals.getActive()) !== null;
+  // A followed custom plan counts too: the switch to the new goal must be explicit.
+  const hasActive = (await getActiveTraining(scope)) !== null;
 
   return (
     <NarrowPage>

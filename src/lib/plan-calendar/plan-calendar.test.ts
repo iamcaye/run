@@ -81,6 +81,12 @@ describe("plan calendar", () => {
     expect(g2.weeks.map((w) => w.plan?.isCurrent ?? false)).toEqual([false, false, false, true, false]);
   });
 
+  it("accepts custom-plan sessions without a phase", () => {
+    const g = grid([s("a", "2026-10-06", "easy", 8, null), s("b", "2026-10-08", "long", 12, null)]);
+    expect(g.weeks[1].plan).toMatchObject({ number: 1, phase: null, plannedKm: 20 });
+    expect(day(g, "2026-10-08").emphasis).toBe("long");
+  });
+
   it("flags race day", () => {
     const g = grid([s("race", "2026-10-25", "race", 21)]);
     expect(day(g, "2026-10-25").isRace).toBe(true);

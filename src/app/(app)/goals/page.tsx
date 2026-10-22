@@ -10,7 +10,7 @@ export const metadata = { title: "Goals · Race Training" };
 
 export default async function GoalsPage() {
   const { scope, settings, today } = await requireUserContext();
-  const goals = await scope.goals.list();
+  const [goals, follow] = await Promise.all([scope.goals.list(), scope.planFollows.getActive()]);
 
   const current = goals
     .filter((g) => g.status === "active" || g.status === "upcoming")
@@ -48,6 +48,11 @@ export default async function GoalsPage() {
           New goal
         </Link>
       </div>
+      {follow ? (
+        <p role="status" className="rounded-xl border border-border bg-surface p-3 text-sm">
+          You&apos;re following <strong>{follow.planName}</strong>. Activating a goal will stop it.
+        </p>
+      ) : null}
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start">
         <Card title="Current">
           {current.length ? <ul>{current.map(row)}</ul> : <p className="text-sm text-muted">No upcoming goals. Create one to get a plan.</p>}
