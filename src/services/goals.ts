@@ -9,7 +9,7 @@ import {
 import type { LocalDate } from "@/lib/time";
 import type { GoalFormValues } from "@/lib/validation/goal";
 import type { Goal, Settings, UserScope } from "@/server/dal";
-import { createPlanIfMissing } from "./plans";
+import { createPlanIfMissing, regenerateFuture } from "./plans";
 
 export type GoalResult<T> =
   | { ok: true; value: T }
@@ -21,10 +21,21 @@ export type GoalContext = { settings: Settings; today: LocalDate };
 const notFound = { ok: false, code: "not_found", message: "Goal not found" } as const;
 const invalid = (message: string) => ({ ok: false, code: "invalid_state", message }) as const;
 
-/** Activates a goal and makes sure it has a plan (generated from today if it has none). */
+/**
+ * Activates a goal and makes sure it has a plan: generated from today if it has none, or rebuilt
+ * from today if all its sessions are in the past (e.g. it was paused for a custom plan). A custom
+ * plan that was active loses its unfrozen future sessions.
+ */
 async function activateWithPlan(scope: UserScope, id: string, ctx: GoalContext): Promise<Goal | null> {
+  const follow = await scope.planFollows.getActive();
   const active = await scope.goals.activate(id);
-  if (active) await createPlanIfMissing(scope, active, ctx.settings, ctx.today);
+  if (!active) return null;
+  if (follow) await scope.sessions.deleteFutureUnfrozen({ followId: follow.id }, ctx.today);
+  const sessions = await scope.sessions.listForGoal(active.id);
+  if (sessions.length === 0) await createPlanIfMissing(scope, active, ctx.settings, ctx.today);
+  else if (active.raceDate >= ctx.today && !sessions.some((s) => s.date >= ctx.today)) {
+    await regenerateFuture(scope, active, ctx.settings, ctx.today);
+  }
   return active;
 }
 

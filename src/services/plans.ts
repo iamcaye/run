@@ -6,7 +6,7 @@ import { generatePlan, type GeneratePlanResult } from "@/lib/planning/generate";
 import { derivePaces } from "@/lib/planning/steps/paces";
 import type { PlanGoal, PlanSettings, RecentActivity } from "@/lib/planning/types";
 import { addDays, isLocalDate, type IsoWeekday, type LocalDate } from "@/lib/time";
-import type { Goal, PlannedSession, Settings, UserScope } from "@/server/dal";
+import { ownerOf, type Goal, type PlannedSession, type Settings, type UserScope } from "@/server/dal";
 
 export function toPlanGoal(goal: Goal): PlanGoal {
   return {
@@ -151,14 +151,14 @@ export async function editSession(
 ): Promise<EditResult> {
   const session = await scope.sessions.get(sessionId);
   if (!session) return { ok: false, code: "not_found", message: "Session not found" };
-  // Custom-plan (follow) sessions are edited through the custom-plans service.
+  // Goal sessions stay on or before race day; custom-plan (follow) sessions can go anywhere.
   const goal = session.goalId ? await scope.goals.get(session.goalId) : null;
-  if (!goal) return { ok: false, code: "not_found", message: "Session not found" };
-  if (!isLocalDate(edit.date) || edit.date > goal.raceDate) {
-    return { ok: false, code: "invalid", message: "Pick a date on or before race day" };
+  if (session.goalId && !goal) return { ok: false, code: "not_found", message: "Session not found" };
+  if (!isLocalDate(edit.date) || (goal && edit.date > goal.raceDate)) {
+    return { ok: false, code: "invalid", message: goal ? "Pick a date on or before race day" : "Pick a valid date" };
   }
   if (edit.date !== session.date) {
-    const sameDay = await scope.sessions.listForGoal(goal.id, { from: edit.date, to: edit.date });
+    const sameDay = await scope.sessions.listFor(ownerOf(session), { from: edit.date, to: edit.date });
     if (sameDay.some((s) => s.id !== session.id)) {
       return { ok: false, code: "conflict", message: "There's already a session on that day" };
     }
@@ -166,7 +166,8 @@ export async function editSession(
 
   const typeChanged = edit.type !== session.type;
   let targetPaceSecPerKm = session.targetPaceSecPerKm;
-  if (typeChanged) {
+  // Goal sessions get the goal's pace for the new type; follow sessions keep the plan's target.
+  if (typeChanged && goal) {
     const { paces } = derivePaces({ goal: toPlanGoal(goal), recentActivities: await recentActivities(scope, settings, today), today });
     const p = paces?.[edit.type] ?? null;
     targetPaceSecPerKm = p === null ? null : Math.round(p);

@@ -21,6 +21,7 @@ import type { Phase } from "@/lib/planning/types";
 import { addDays, daysBetween, localDateOf, startOfWeek, type IsoWeekday, type LocalDate } from "@/lib/time";
 import type { Goal, PlannedSession, Settings, UserScope } from "@/server/dal";
 import { toAdjustmentView, type AdjustmentView } from "./adjustment-view";
+import { getActiveTraining } from "./training";
 
 export type DashboardSession = PlannedSession & { status: SessionStatus; actualKm: number | null };
 
@@ -49,19 +50,20 @@ const ACWR_CHART_DAYS = 8 * 7;
 
 export async function getDashboard(scope: UserScope, settings: Settings, today: LocalDate): Promise<Dashboard> {
   const weekStart = settings.weekStart as IsoWeekday;
-  const goals = await scope.goals.list();
-  const goal = goals.find((g) => g.status === "active") ?? null;
+  const [goals, training] = await Promise.all([scope.goals.list(), getActiveTraining(scope)]);
+  const goal = training?.kind === "goal" ? training.goal : null;
+  const owner = training?.owner ?? null;
   const awaitingResult = goals.filter((g) => needsResultPrompt(g, today));
 
   const acwrFrom = addDays(today, -(ACWR_CHART_DAYS - 1));
   const metricsFrom = addDays(acwrFrom, -METRICS.chronicDays);
   // Activities reach back to the plan start too; the DAL resolves it in SQL so all three queries run at once.
   const metricsFromUtc = new Date(`${addDays(metricsFrom, -1)}T00:00:00Z`);
-  const [sessions, adjustments, rows] = goal
+  const [sessions, adjustments, rows] = owner
     ? await Promise.all([
-        scope.sessions.listForGoal(goal.id),
-        scope.adjustments.listForGoal(goal.id),
-        scope.activities.sinceOrPlanStart(metricsFromUtc, { goalId: goal.id }),
+        scope.sessions.listFor(owner),
+        goal ? scope.adjustments.listForGoal(goal.id) : [],
+        scope.activities.sinceOrPlanStart(metricsFromUtc, owner),
       ])
     : [[], [], await scope.activities.since(metricsFromUtc)];
   const planStart = sessions[0]?.date ?? today;

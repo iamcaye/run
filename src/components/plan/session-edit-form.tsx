@@ -16,7 +16,8 @@ export function SessionEditForm({
   action: (prev: FormState, formData: FormData) => Promise<FormState>;
   defaults: { date: string; type: string; distance: string; effortDescription: string };
   units: "km" | "mi";
-  maxDate: string;
+  /** Latest allowed date (race day for goal sessions); custom-plan sessions have none. */
+  maxDate?: string;
 }) {
   const { state, onSubmit, pending } = useFormAction(action);
   const errors = state.fieldErrors;
