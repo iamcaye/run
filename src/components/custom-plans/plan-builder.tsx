@@ -11,6 +11,7 @@ import type { Units } from "@/lib/units";
 import { deleteCustomPlanAction } from "@/server/actions/custom-plans";
 import type { LibraryWorkout } from "@/server/actions/workouts";
 import { ActivateDialog } from "./activate-dialog";
+import { ShareDialog } from "./share-dialog";
 import { EditorPanel } from "./editor-panel";
 import { usePlanBuilder, type BuilderPlan } from "./use-plan-builder";
 import { WeekGrid } from "./week-grid";
@@ -24,6 +25,7 @@ export function PlanBuilder({
   today,
   isActive,
   replacesActive,
+  share,
 }: {
   plan: BuilderPlan;
   library: LibraryWorkout[];
@@ -31,6 +33,7 @@ export function PlanBuilder({
   today: LocalDate;
   isActive: boolean;
   replacesActive: boolean;
+  share: { shareUrl: string | null; enabled: boolean };
 }) {
   const { state, dispatch, save, retrySync, saving, status } = usePlanBuilder(plan);
   const [library, setLibrary] = useState(initialLibrary);
@@ -84,6 +87,13 @@ export function PlanBuilder({
           <Button type="button" variant="ink" onClick={save} disabled={!state.dirty || saving || nameMissing || status.kind === "conflict"}>
             {saving ? "Saving…" : "Save"}
           </Button>
+          <Link
+            href={`/plans/${plan.id}/preview`}
+            className="rounded-xl border border-border bg-surface px-4 py-2.5 font-semibold"
+          >
+            Preview
+          </Link>
+          <ShareDialog planId={plan.id} initial={share} disabledReason={state.dirty ? "Save your changes before sharing" : null} />
           <ActivateDialog
             planId={plan.id}
             today={today}

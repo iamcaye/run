@@ -3,12 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { env } from "@/config/env";
 import { emptyWeek } from "@/lib/custom-plans/ops";
+import { sharePath } from "@/lib/custom-plans/share";
 import type { CustomPlanDoc } from "@/lib/custom-plans/types";
 import { isLocalDate, type LocalDate } from "@/lib/time";
 import { planMetaSchema, savePlanInputSchema } from "@/lib/validation/custom-plan";
 import { requireUserContext } from "@/server/context";
 import type { CustomPlan, UserScope } from "@/server/dal";
+import { updatePlanShare } from "@/services/sharing";
 import { activateCustomPlan, ownPlanSource, stopCustomPlan, syncFollowSessions } from "@/services/training";
 import { failure, formValues, invalid, type FormState } from "./form-state";
 
@@ -133,4 +136,19 @@ export async function stopCustomPlanAction(): Promise<void> {
   await stopCustomPlan(scope, today);
   revalidateTraining();
   revalidatePath("/plans");
+}
+
+export type ShareActionResult =
+  | { status: "ok"; shareUrl: string | null; enabled: boolean }
+  | { status: "error"; message: string };
+
+export async function updatePlanShareAction(id: string, op: "enable" | "disable" | "regenerate"): Promise<ShareActionResult> {
+  const { scope } = await requireUserContext();
+  if (!uuid.safeParse(id).success || !z.enum(["enable", "disable", "regenerate"]).safeParse(op).success) {
+    return { status: "error", message: "Plan not found" };
+  }
+  const share = await updatePlanShare(scope, id, op);
+  if (!share) return { status: "error", message: "Plan not found" };
+  revalidatePath(`/plans/${id}`);
+  return { status: "ok", shareUrl: share.shareToken ? `${env().BETTER_AUTH_URL}${sharePath(share.shareToken)}` : null, enabled: share.shareEnabled };
 }

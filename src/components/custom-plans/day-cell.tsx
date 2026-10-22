@@ -5,11 +5,10 @@ import { useState } from "react";
 import { StructureBar } from "@/components/plan/structure-bar";
 import type { BuilderAction } from "@/lib/custom-plans/builder-reducer";
 import { parseDragPayload, type DragPayload } from "@/lib/custom-plans/drag";
-import { estimateWorkout } from "@/lib/custom-plans/estimate";
 import type { DaySlot, PlanWorkout } from "@/lib/custom-plans/types";
-import type { StepTarget, StructureStep } from "@/lib/planning/types";
+import { workoutSummary } from "@/lib/custom-plans/summary";
 import { WEEKDAY_LABELS } from "@/lib/time";
-import { formatDistance, formatPace, type Units } from "@/lib/units";
+import type { Units } from "@/lib/units";
 import type { LibraryWorkout } from "@/server/actions/workouts";
 
 /** dataTransfer type of everything draggable in the builder. */
@@ -24,26 +23,6 @@ export function startDrag(e: DragEvent, payload: DragPayload) {
 export const DEFAULT_WORKOUT: PlanWorkout = { name: "Easy run", type: "easy", notes: null, steps: [{ kind: "steady", km: 8 }] };
 
 export const fromLibrary = ({ name, type, notes, steps }: LibraryWorkout): PlanWorkout => structuredClone({ name, type, notes, steps });
-
-function targetLabel(t: StepTarget, units: Units): string {
-  if (t.kind === "pace") return formatPace(t.secPerKm, units);
-  if (t.kind === "hr_zone") return `Z${t.zone}`;
-  return `RPE ${t.rpe}`;
-}
-
-/** The target of the main (work) block: the first repeat, else the first steady block. */
-function mainTarget(steps: readonly StructureStep[], units: Units): string | null {
-  const main = steps.find((s) => s.kind === "reps") ?? steps.find((s) => s.kind === "steady");
-  if (!main) return null;
-  if (main.target) return targetLabel(main.target, units);
-  return main.paceSecPerKm ? formatPace(main.paceSecPerKm, units) : null;
-}
-
-export function workoutSummary(w: PlanWorkout, units: Units): string {
-  const km = `≈ ${formatDistance(estimateWorkout(w.steps).km, units)}`;
-  const target = mainTarget(w.steps, units);
-  return target ? `${km} · ${target}` : km;
-}
 
 type Props = {
   slot: DaySlot;

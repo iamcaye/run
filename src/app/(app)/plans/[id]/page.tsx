@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { PlanBuilder } from "@/components/custom-plans/plan-builder";
+import { env } from "@/config/env";
+import { sharePath } from "@/lib/custom-plans/share";
 import { requireUserContext } from "@/server/context";
 import { getActiveTraining } from "@/services/training";
 
@@ -24,6 +26,10 @@ export default async function PlanBuilderPage({ params }: PageProps<"/plans/[id]
       today={today}
       isActive={isActive}
       replacesActive={active !== null && !isActive}
+      share={{
+        shareUrl: plan.shareToken ? `${env().BETTER_AUTH_URL}${sharePath(plan.shareToken)}` : null,
+        enabled: plan.shareEnabled,
+      }}
     />
   );
 }
