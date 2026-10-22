@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { addDays, isoWeekday } from "@/lib/time";
-import { diffFollowSessions, planEndDate, scheduleWorkouts, toSessionDrafts } from "./schedule";
+import { diffFollowSessions, planEndDate, planWeekNumber, scheduleWorkouts, toSessionDrafts } from "./schedule";
 import type { CustomPlanDoc, PlanWorkout } from "./types";
 
 const run: PlanWorkout = { name: "Easy", type: "easy", notes: null, steps: [{ kind: "steady", km: 5 }] };
@@ -24,6 +24,16 @@ describe("scheduleWorkouts", () => {
   it("planEndDate is the last workout date, or null", () => {
     expect(planEndDate(twoWeeksTueAndSun, "2026-11-02")).toBe("2026-11-15");
     expect(planEndDate({ weeks: [] }, "2026-11-02")).toBeNull();
+  });
+  it("planWeekNumber counts Mon–Sun plan weeks from the start week, null before start", () => {
+    // Starts Thursday 2026-10-22; week 1 is Mon 19 – Sun 25.
+    expect(planWeekNumber("2026-10-22", "2026-10-21", 3)).toBeNull();
+    expect(planWeekNumber("2026-10-22", "2026-10-22", 3)).toBe(1);
+    expect(planWeekNumber("2026-10-22", "2026-10-25", 3)).toBe(1);
+    expect(planWeekNumber("2026-10-22", "2026-10-26", 3)).toBe(2);
+    expect(planWeekNumber("2026-10-22", "2026-11-30", 3)).toBe(3);
+    expect(planWeekNumber(null, "2026-10-22", 3)).toBeNull();
+    expect(planWeekNumber("2026-10-22", "2026-10-22", 0)).toBeNull();
   });
   it("toSessionDrafts fills targets and effort", () => {
     const doc: CustomPlanDoc = {

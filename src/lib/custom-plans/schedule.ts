@@ -1,5 +1,5 @@
 import { EFFORT_DESCRIPTIONS } from "@/config/training";
-import { addDays, startOfWeek, type IsoWeekday, type LocalDate } from "@/lib/time";
+import { addDays, daysBetween, startOfWeek, type IsoWeekday, type LocalDate } from "@/lib/time";
 import { estimateWorkout } from "./estimate";
 import type { CustomPlanDoc, DaySlot, PlanWorkout, SessionDraft } from "./types";
 
@@ -45,6 +45,16 @@ export function toSessionDrafts(doc: CustomPlanDoc, startDate: LocalDate): Sessi
 export function planEndDate(doc: CustomPlanDoc, startDate: LocalDate): LocalDate | null {
   const s = scheduleWorkouts(doc, startDate);
   return s.length ? s[s.length - 1]!.date : null;
+}
+
+/**
+ * Which plan week (1-based, Mon–Sun from the start date's week) `today` falls in, clamped to the
+ * plan's length. Null before the start date or for an empty plan.
+ */
+export function planWeekNumber(startDate: LocalDate | null, today: LocalDate, totalWeeks: number): number | null {
+  if (!startDate || today < startDate || totalWeeks < 1) return null;
+  const week = Math.floor(daysBetween(startOfWeek(startDate, 1), today) / 7) + 1;
+  return Math.min(week, totalWeeks);
 }
 
 export type ExistingSession = {

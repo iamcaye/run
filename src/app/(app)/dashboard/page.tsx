@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AdjustmentCard } from "@/components/adjustments/adjustment-card";
 import { AcwrChart } from "@/components/charts/acwr-chart";
 import { LongRunChart } from "@/components/charts/long-run-chart";
+import { PlanHero } from "@/components/dashboard/plan-hero";
 import { RaceHero } from "@/components/dashboard/race-hero";
 import { StatTile } from "@/components/dashboard/stat-tile";
 import { TodayCard } from "@/components/dashboard/today-card";
@@ -41,7 +42,7 @@ export default async function DashboardPage() {
     </Card>
   ));
 
-  if (!d.goal) {
+  if (!d.goal && !d.plan) {
     return (
       <div className="flex flex-col gap-4">
         <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">Dashboard</h1>
@@ -60,7 +61,6 @@ export default async function DashboardPage() {
     );
   }
 
-  const goal = d.goal;
   const week = d.thisWeekVolume;
   const acwr = d.acwrToday;
 
@@ -106,17 +106,28 @@ export default async function DashboardPage() {
       {hasPrompts ? <div className="flex flex-col gap-3.5 lg:col-span-12 lg:row-start-1">{prompts}</div> : null}
 
       <div className={`flex flex-col gap-3.5 lg:col-span-5 lg:col-start-1 ${heroStart}`}>
-        <RaceHero
-          name={goal.name}
-          distanceKm={goal.distanceKm}
-          units={units}
-          daysToRace={d.daysToRace}
-          prediction={d.prediction}
-          targetSeconds={goal.targetTimeSeconds}
-          weeks={profile}
-          weekNumber={d.weekNumber}
-          totalWeeks={d.totalWeeks}
-        />
+        {d.goal ? (
+          <RaceHero
+            name={d.goal.name}
+            distanceKm={d.goal.distanceKm}
+            units={units}
+            daysToRace={d.daysToRace}
+            prediction={d.prediction}
+            targetSeconds={d.goal.targetTimeSeconds}
+            weeks={profile}
+            weekNumber={d.weekNumber}
+            totalWeeks={d.totalWeeks}
+          />
+        ) : d.plan ? (
+          <PlanHero
+            plan={d.plan}
+            weekNumber={d.weekNumber}
+            totalWeeks={d.totalWeeks}
+            volume={profile}
+            units={units}
+            startDate={d.planStart}
+          />
+        ) : null}
 
         <TodayCard session={todaySession} next={nextSession} today={today} units={units} />
 

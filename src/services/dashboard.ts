@@ -1,5 +1,6 @@
 import "server-only";
 import { METRICS } from "@/config/training";
+import { planEndDate, planWeekNumber } from "@/lib/custom-plans/schedule";
 import { needsResultPrompt } from "@/lib/goals/rules";
 import {
   acwrSeries,
@@ -25,8 +26,20 @@ import { getActiveTraining } from "./training";
 
 export type DashboardSession = PlannedSession & { status: SessionStatus; actualKm: number | null };
 
+export type DashboardPlan = {
+  followId: string;
+  name: string;
+  customPlanId: string | null;
+  /** Date of the plan's last session. */
+  endDate: LocalDate | null;
+  finished: boolean;
+};
+
 export type Dashboard = {
+  /** Null when a custom plan is active (see `plan`) or nothing is. */
   goal: Goal | null;
+  /** The followed custom plan, when that is the active thing. */
+  plan: DashboardPlan | null;
   /** Date of the active goal's first planned session. */
   planStart: LocalDate | null;
   awaitingResult: Goal[];
@@ -52,6 +65,7 @@ export async function getDashboard(scope: UserScope, settings: Settings, today: 
   const weekStart = settings.weekStart as IsoWeekday;
   const [goals, training] = await Promise.all([scope.goals.list(), getActiveTraining(scope)]);
   const goal = training?.kind === "goal" ? training.goal : null;
+  const follow = training?.kind === "plan" ? training.follow : null;
   const owner = training?.owner ?? null;
   const awaitingResult = goals.filter((g) => needsResultPrompt(g, today));
 
@@ -119,14 +133,34 @@ export async function getDashboard(scope: UserScope, settings: Settings, today: 
   const weekStarts = [...new Set(sessions.map((s) => startOfWeek(s.date, weekStart)))];
   const weekIdx = weekStarts.indexOf(currentWeek);
 
+  // A custom plan counts its own Mon–Sun weeks (as in the builder), not calendar weeks with sessions.
+  let plan: DashboardPlan | null = null;
+  let weekNumber = weekIdx === -1 ? null : weekIdx + 1;
+  let totalWeeks = weekStarts.length || null;
+  if (follow) {
+    const lastSession = sessions.at(-1)?.date ?? null;
+    const scheduledEnd = follow.startDate ? planEndDate(follow.snapshot, follow.startDate) : null;
+    const endDate = [lastSession, scheduledEnd].filter((d) => d !== null).sort().at(-1) ?? null;
+    plan = {
+      followId: follow.id,
+      name: follow.planName,
+      customPlanId: follow.customPlanId,
+      endDate,
+      finished: endDate !== null && endDate < today,
+    };
+    totalWeeks = follow.snapshot.weeks.length || null;
+    weekNumber = planWeekNumber(follow.startDate, today, follow.snapshot.weeks.length);
+  }
+
   return {
     goal,
+    plan,
     planStart: sessions[0]?.date ?? null,
     awaitingResult,
     daysToRace: goal ? daysBetween(today, goal.raceDate) : null,
     phase: thisWeek[0]?.phase ?? sessions.find((s) => s.date >= today)?.phase ?? null,
-    weekNumber: weekIdx === -1 ? null : weekIdx + 1,
-    totalWeeks: weekStarts.length || null,
+    weekNumber,
+    totalWeeks,
     thisWeek,
     thisWeekVolume: volume.find((w) => w.isCurrent) ?? null,
     // Pending proposals, plus ones decided in the last day so the outcome stays visible.
