@@ -18,6 +18,11 @@ const invalid = (message: string) => ({ ok: false, code: "invalid", message }) a
 
 export async function getActiveTraining(scope: UserScope): Promise<ActiveTraining> {
   const [goal, follow] = await Promise.all([scope.goals.getActive(), scope.planFollows.getActive()]);
+  return activeTrainingOf(goal, follow);
+}
+
+/** The active thing from an already loaded active goal and active follow (the goal wins). */
+export function activeTrainingOf(goal: Goal | null, follow: PlanFollow | null): ActiveTraining {
   if (goal) return { kind: "goal", goal, owner: { goalId: goal.id } };
   if (follow) return { kind: "plan", follow, owner: { followId: follow.id } };
   return null;

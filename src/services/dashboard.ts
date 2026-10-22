@@ -22,7 +22,7 @@ import type { Phase } from "@/lib/planning/types";
 import { addDays, daysBetween, localDateOf, startOfWeek, type IsoWeekday, type LocalDate } from "@/lib/time";
 import type { Goal, PlannedSession, Settings, UserScope } from "@/server/dal";
 import { toAdjustmentView, type AdjustmentView } from "./adjustment-view";
-import { getActiveTraining } from "./training";
+import { activeTrainingOf } from "./training";
 
 export type DashboardSession = PlannedSession & { status: SessionStatus; actualKm: number | null };
 
@@ -63,7 +63,8 @@ const ACWR_CHART_DAYS = 8 * 7;
 
 export async function getDashboard(scope: UserScope, settings: Settings, today: LocalDate): Promise<Dashboard> {
   const weekStart = settings.weekStart as IsoWeekday;
-  const [goals, training] = await Promise.all([scope.goals.list(), getActiveTraining(scope)]);
+  const [goals, activeFollow] = await Promise.all([scope.goals.list(), scope.planFollows.getActive()]);
+  const training = activeTrainingOf(goals.find((g) => g.status === "active") ?? null, activeFollow);
   const goal = training?.kind === "goal" ? training.goal : null;
   const follow = training?.kind === "plan" ? training.follow : null;
   const owner = training?.owner ?? null;
