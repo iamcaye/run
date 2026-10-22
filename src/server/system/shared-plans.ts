@@ -110,7 +110,13 @@ export async function listActiveFollowers(
   return db()
     .select({ userId: planFollow.userId, followId: planFollow.id })
     .from(planFollow)
+    .innerJoin(customPlan, eq(customPlan.id, planFollow.customPlanId))
     .where(
-      and(eq(planFollow.customPlanId, planId), eq(planFollow.status, "active"), ne(planFollow.userId, authorId)),
+      and(
+        eq(planFollow.customPlanId, planId),
+        eq(customPlan.userId, authorId),
+        eq(planFollow.status, "active"),
+        ne(planFollow.userId, authorId),
+      ),
     );
 }

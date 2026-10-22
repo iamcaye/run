@@ -335,6 +335,8 @@ describe("shared plans", () => {
       sql`insert into plan_follow (user_id, custom_plan_id, plan_name, snapshot, status, author_id) values (${alice}, ${planId}, 'x', '{"weeks":[]}'::jsonb, 'active', ${alice})`,
     );
     expect(await listActiveFollowers(planId, alice)).toEqual([{ userId: carol, followId: c.follow.id }]);
+    // The grant is ownership: a caller who is not the plan's author gets nothing.
+    expect(await listActiveFollowers(planId, bob)).toEqual([]);
   });
 
   it("deleting the author keeps followers' follows with the author name", async () => {
