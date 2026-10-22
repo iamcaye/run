@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, gte, inArray, lte, notExists, sql } from "drizzle-orm";
+import { and, asc, eq, exists, gte, inArray, isNotNull, lte, notExists, or, sql } from "drizzle-orm";
 import type { Db } from "@/server/db/client";
 import { activity, plannedSession } from "@/server/db/schema";
 import { ownerColumns, ownerCondition } from "./owner";
@@ -55,6 +55,43 @@ export function sessionsRepo(d: Db, userId: string) {
         .innerJoin(plannedSession, eq(plannedSession.id, activity.plannedSessionId))
         .where(and(eq(activity.userId, userId), ownedBy(owner)));
       return new Set(rows.map((r) => r.id).filter((id): id is string => id !== null));
+    },
+
+    /**
+     * Dates on or after `from` held by frozen sessions (user-edited or with a linked activity) of
+     * this user that `owner` does not own. With `followsOnly`, only custom-plan sessions count.
+     * The newly active owner yields these days to the sessions that survived a switch.
+     */
+    async frozenDatesOfOthers(
+      owner: SessionOwner,
+      from: string,
+      opts: { followsOnly?: boolean } = {},
+    ): Promise<Set<string>> {
+      const notOwner =
+        "goalId" in owner
+          ? sql`${plannedSession.goalId} is distinct from ${owner.goalId}`
+          : sql`${plannedSession.followId} is distinct from ${owner.followId}`;
+      const rows = await d
+        .selectDistinct({ date: plannedSession.date })
+        .from(plannedSession)
+        .where(
+          and(
+            eq(plannedSession.userId, userId),
+            gte(plannedSession.date, from),
+            notOwner,
+            opts.followsOnly ? isNotNull(plannedSession.followId) : undefined,
+            or(
+              eq(plannedSession.isUserEdited, true),
+              exists(
+                d
+                  .select({ one: sql`1` })
+                  .from(activity)
+                  .where(and(eq(activity.userId, userId), eq(activity.plannedSessionId, plannedSession.id))),
+              ),
+            ),
+          ),
+        );
+      return new Set(rows.map((r) => r.date));
     },
 
     /** Atomically deletes `deleteIds` (of this owner) and inserts `inserts` for it. */

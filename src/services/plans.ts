@@ -75,13 +75,22 @@ export async function planInsights(
   });
 }
 
-/** Generates and stores a plan for a goal that has none yet. Returns null if it already has one. */
+/** Generated sessions minus those on `skipDates` (days another owner's sessions keep). */
+function storable<T extends { date: LocalDate }>(sessions: readonly T[], skipDates?: ReadonlySet<LocalDate>) {
+  return skipDates?.size ? sessions.filter((s) => !skipDates.has(s.date)) : sessions;
+}
+
+/**
+ * Generates and stores a plan for a goal that has none yet. Returns null if it already has one.
+ * Nothing is stored on `skipDates`.
+ */
 export async function createPlanIfMissing(
   scope: UserScope,
   goal: Goal,
   settings: Settings,
   today: LocalDate,
   startDate: LocalDate = today,
+  skipDates?: ReadonlySet<LocalDate>,
 ): Promise<GeneratePlanResult | null> {
   const existing = await scope.sessions.listForGoal(goal.id);
   if (existing.length > 0) return null;
@@ -92,19 +101,21 @@ export async function createPlanIfMissing(
     today,
     recentActivities: await recentActivities(scope, settings, today),
   });
-  await scope.sessions.replace({ goalId: goal.id }, [], plan.sessions.map((s) => ({ ...s, isUserEdited: false })));
+  await scope.sessions.replace({ goalId: goal.id }, [], storable(plan.sessions, skipDates).map((s) => ({ ...s, isUserEdited: false })));
   return plan;
 }
 
 /**
  * Rebuilds sessions from today on. Past sessions, user-edited ones and ones with a linked activity
  * are kept as they are. The curve keeps its original start so week numbering stays stable.
+ * Nothing new is stored on `skipDates`.
  */
 export async function regenerateFuture(
   scope: UserScope,
   goal: Goal,
   settings: Settings,
   today: LocalDate,
+  skipDates?: ReadonlySet<LocalDate>,
 ): Promise<GeneratePlanResult> {
   const [sessions, linked] = await Promise.all([
     scope.sessions.listForGoal(goal.id),
@@ -126,7 +137,11 @@ export async function regenerateFuture(
       hasActivity: linked.has(s.id),
     })),
   });
-  await scope.sessions.replace({ goalId: goal.id }, plan.deleteIds, plan.sessions.map((s) => ({ ...s, isUserEdited: false })));
+  await scope.sessions.replace(
+    { goalId: goal.id },
+    plan.deleteIds,
+    storable(plan.sessions, skipDates).map((s) => ({ ...s, isUserEdited: false })),
+  );
   return plan;
 }
 

@@ -50,6 +50,27 @@ async function runOn(scope: UserScope, date: string, km: number, plannedSessionI
   });
 }
 
+/** Dates holding more than one of the user's sessions (any owner). */
+async function doubleBookedDates(scope: UserScope) {
+  return db()
+    .select({ date: plannedSession.date, n: count() })
+    .from(plannedSession)
+    .where(eq(plannedSession.userId, scope.userId))
+    .groupBy(plannedSession.date)
+    .having(({ n }) => gt(n, 1));
+}
+
+const everyDay = [1, 2, 3, 4, 5, 6, 7];
+
+/** A user whose goal plan was generated on 2026-10-01 and is active today. */
+async function userWithGoal() {
+  const scope = await newUser();
+  const settings = await scope.settings.get();
+  const created = await createGoal(scope, { ...goalInput(), targetTimeSeconds: 6300, notes: null }, { settings, today: "2026-10-01" });
+  if (!created.ok) throw new Error("goal");
+  return { scope, settings, goal: created.value };
+}
+
 describe("training service", () => {
   it("activates a plan from a Thursday", async () => {
     const scope = await newUser();
@@ -91,13 +112,7 @@ describe("training service", () => {
     expect(await scope.sessions.listFor({ followId: r.value.id }, { from: later })).toEqual([]);
     expect((await scope.sessions.listForGoal(goal.id, { from: later })).length).toBeGreaterThan(10);
 
-    const dupes = await db()
-      .select({ date: plannedSession.date, n: count() })
-      .from(plannedSession)
-      .where(eq(plannedSession.userId, scope.userId))
-      .groupBy(plannedSession.date)
-      .having(({ n }) => gt(n, 1));
-    expect(dupes).toEqual([]);
+    expect(await doubleBookedDates(scope)).toEqual([]);
   });
 
   it("sync keeps frozen sessions", async () => {
@@ -230,5 +245,81 @@ describe("training service", () => {
     expect(d.goal).toBeNull();
     expect(d.thisWeek.map((s) => s.date)).toEqual(["2026-10-22", "2026-10-23", "2026-10-24"]);
     expect(d.thisWeekVolume?.plannedKm).toBe(15);
+  });
+
+  it("re-activating a plan rebuilds weeks already done in an earlier run", async () => {
+    const scope = await newUser();
+    const plan = await savedPlan(scope, { weeks: [week("w1", [4, 5, 6]), week("w2", [4, 5, 6])] });
+    const first = await activateCustomPlan(scope, plan.id, today, today);
+    if (!first.ok) throw new Error(first.message);
+    const done = await scope.sessions.listFor({ followId: first.value.id }, { to: "2026-10-24" });
+    expect(done).toHaveLength(3);
+    for (const s of done) await runOn(scope, s.date, 5, s.id);
+    expect((await stopCustomPlan(scope, "2026-10-26")).ok).toBe(true);
+
+    const again = await activateCustomPlan(scope, plan.id, "2026-11-02", "2026-11-02");
+    if (!again.ok) throw new Error(again.message);
+    expect(again.value.id).toBe(first.value.id);
+    const rebuilt = await scope.sessions.listFor({ followId: again.value.id }, { from: "2026-11-02" });
+    expect(rebuilt.map((s) => s.date)).toEqual(["2026-11-05", "2026-11-06", "2026-11-07", "2026-11-12", "2026-11-13", "2026-11-14"]);
+    expect((await scope.sessions.listFor({ followId: again.value.id }, { to: "2026-10-31" })).map((s) => s.id)).toEqual(done.map((s) => s.id));
+  });
+
+  it("a plan yields the day of a completed goal session", async () => {
+    const { scope, goal } = await userWithGoal();
+    const [todays] = await scope.sessions.listForGoal(goal.id, { from: today, to: today });
+    if (!todays) throw new Error("fixture");
+    await runOn(scope, today, 6, todays.id);
+    const plan = await savedPlan(scope, { weeks: [week("w1", everyDay), week("w2", everyDay)] });
+    const r = await activateCustomPlan(scope, plan.id, today, today);
+    if (!r.ok) throw new Error(r.message);
+    expect(await scope.sessions.listFor({ followId: r.value.id }, { from: today, to: today })).toEqual([]);
+    expect(await scope.sessions.listFor({ followId: r.value.id }, { from: "2026-10-23", to: "2026-10-23" })).toHaveLength(1);
+    expect(await doubleBookedDates(scope)).toEqual([]);
+  });
+
+  it("a plan yields the day of a hand-edited future goal session", async () => {
+    const { scope, goal } = await userWithGoal();
+    const [edited] = await scope.sessions.listForGoal(goal.id, { from: "2026-10-27", to: "2026-10-27" });
+    if (!edited) throw new Error("fixture");
+    await scope.sessions.update(edited.id, { targetKm: 4, isUserEdited: true });
+    const plan = await savedPlan(scope, { weeks: [week("w1", everyDay), week("w2", everyDay)] });
+    const r = await activateCustomPlan(scope, plan.id, today, today);
+    if (!r.ok) throw new Error(r.message);
+    expect(await scope.sessions.listFor({ followId: r.value.id }, { from: "2026-10-27", to: "2026-10-27" })).toEqual([]);
+    expect(await scope.sessions.listForGoal(goal.id, { from: today })).toMatchObject([{ id: edited.id }]);
+    expect(await doubleBookedDates(scope)).toEqual([]);
+  });
+
+  it("a re-activated goal yields the day of a hand-edited future plan session", async () => {
+    const { scope, settings, goal } = await userWithGoal();
+    const plan = await savedPlan(scope, { weeks: [week("w1", everyDay), week("w2", everyDay)] });
+    const r = await activateCustomPlan(scope, plan.id, today, today);
+    if (!r.ok) throw new Error(r.message);
+    const [edited] = await scope.sessions.listFor({ followId: r.value.id }, { from: "2026-10-25", to: "2026-10-25" });
+    if (!edited) throw new Error("fixture");
+    await scope.sessions.update(edited.id, { targetKm: 4, isUserEdited: true });
+
+    const back = await activateGoal(scope, goal.id, { settings, today });
+    expect(back.ok).toBe(true);
+    expect(await scope.sessions.listForGoal(goal.id, { from: "2026-10-25", to: "2026-10-25" })).toEqual([]);
+    expect((await scope.sessions.listForGoal(goal.id, { from: today })).length).toBeGreaterThan(10);
+    expect(await doubleBookedDates(scope)).toEqual([]);
+  });
+
+  it("a new goal made active while a plan runs yields the plan's frozen days", async () => {
+    const scope = await newUser();
+    const settings = await scope.settings.get();
+    const plan = await savedPlan(scope, { weeks: [week("w1", everyDay), week("w2", everyDay)] });
+    const r = await activateCustomPlan(scope, plan.id, today, today);
+    if (!r.ok) throw new Error(r.message);
+    const [todays] = await scope.sessions.listFor({ followId: r.value.id }, { from: today, to: today });
+    if (!todays) throw new Error("fixture");
+    await runOn(scope, today, 5, todays.id);
+
+    const created = await createGoal(scope, { ...goalInput(), targetTimeSeconds: 6300, notes: null }, { settings, today }, { makeActive: true });
+    if (!created.ok || created.value.status !== "active") throw new Error("goal");
+    expect(await scope.sessions.listForGoal(created.value.id, { from: today, to: today })).toEqual([]);
+    expect(await doubleBookedDates(scope)).toEqual([]);
   });
 });

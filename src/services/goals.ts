@@ -24,7 +24,7 @@ const invalid = (message: string) => ({ ok: false, code: "invalid_state", messag
 /**
  * Activates a goal and makes sure it has a plan: generated from today if it has none, or rebuilt
  * from today if all its sessions are in the past (e.g. it was paused for a custom plan). A custom
- * plan that was active loses its unfrozen future sessions.
+ * plan that was active loses its unfrozen future sessions; the days its frozen ones keep are skipped.
  */
 async function activateWithPlan(scope: UserScope, id: string, ctx: GoalContext): Promise<Goal | null> {
   const follow = await scope.planFollows.getActive();
@@ -32,10 +32,13 @@ async function activateWithPlan(scope: UserScope, id: string, ctx: GoalContext):
   if (!active) return null;
   if (follow) await scope.sessions.deleteFutureUnfrozen({ followId: follow.id }, ctx.today);
   const sessions = await scope.sessions.listForGoal(active.id);
-  if (sessions.length === 0) await createPlanIfMissing(scope, active, ctx.settings, ctx.today);
-  else if (active.raceDate >= ctx.today && !sessions.some((s) => s.date >= ctx.today)) {
-    await regenerateFuture(scope, active, ctx.settings, ctx.today);
-  }
+  const needsPlan = sessions.length === 0;
+  const needsFuture = !needsPlan && active.raceDate >= ctx.today && !sessions.some((s) => s.date >= ctx.today);
+  if (!needsPlan && !needsFuture) return active;
+  // Custom-plan sessions that survived (done or hand-edited) keep their days.
+  const taken = await scope.sessions.frozenDatesOfOthers({ goalId: active.id }, ctx.today, { followsOnly: true });
+  if (needsPlan) await createPlanIfMissing(scope, active, ctx.settings, ctx.today, ctx.today, taken);
+  else await regenerateFuture(scope, active, ctx.settings, ctx.today, taken);
   return active;
 }
 

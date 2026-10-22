@@ -35,7 +35,7 @@ export async function activateCustomPlan(
 ): Promise<TrainingResult<PlanFollow>> {
   const plan = await scope.customPlans.get(planId);
   if (!plan) return { ok: false, code: "not_found", message: "Plan not found" };
-  if (!isLocalDate(startDate) || startDate < today) return invalid("Pick a start date from today on");
+  if (!isLocalDate(startDate) || startDate < today) return invalid("Pick a start date on or after today");
   if (toSessionDrafts(plan.doc, startDate).length === 0) return invalid("Add at least one workout before activating");
 
   const previous = await getActiveTraining(scope);
@@ -84,23 +84,29 @@ export async function syncFollowSessions(
 ): Promise<void> {
   const current = await scope.planFollows.get(follow.id);
   if (!current || current.status !== "active" || !current.startDate) return;
+  const { startDate } = current;
   const owner = { followId: current.id };
-  const [existing, linked, plan] = await Promise.all([
+  const [existing, linked, plan, taken] = await Promise.all([
     scope.sessions.listFor(owner),
     scope.sessions.linkedSessionIds(owner),
     current.customPlanId ? scope.customPlans.get(current.customPlanId) : null,
+    scope.sessions.frozenDatesOfOthers(owner, today),
   ]);
   const { deleteIds, inserts } = diffFollowSessions({
-    desired: toSessionDrafts(doc, current.startDate),
+    desired: toSessionDrafts(doc, startDate),
     existing: existing.map((s) => ({
       id: s.id,
       date: s.date,
-      sourceKey: s.sourceKey,
+      // Sessions from an earlier run of this plan (before the current start) don't stand in for
+      // its workouts: a re-activated plan schedules them again.
+      sourceKey: s.date < startDate ? null : s.sourceKey,
       isUserEdited: s.isUserEdited,
       hasActivity: linked.has(s.id),
     })),
     today,
   });
-  await scope.sessions.replace(owner, deleteIds, inserts.map(toSessionInput));
+  // Days kept by the previously active goal or plan (done or hand-edited) aren't double-booked.
+  const kept = inserts.filter((d) => !taken.has(d.date));
+  await scope.sessions.replace(owner, deleteIds, kept.map(toSessionInput));
   await scope.planFollows.updateSnapshot(current.id, plan?.name ?? current.planName, doc);
 }
