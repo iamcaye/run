@@ -251,3 +251,20 @@ export const WORKOUT_LIMITS = {
   nameMax: 80,
   notesMax: 500,
 } as const;
+
+/** −/+ increments of the workout editor (distances in the user's units, times in seconds). */
+export const EDITOR_STEPS = { distance: 0.5, repDistanceKm: 0.1, repDistanceMi: 0.1, blockSeconds: 30, recoverySeconds: 15, paceSeconds: 5 };
+
+/** Defaults of the workout editor: new blocks (km / seconds) and freshly picked targets. */
+export const EDITOR_DEFAULTS = {
+  warmupKm: 2,
+  cooldownKm: 2,
+  steadyKm: 5,
+  reps: { reps: 6, repKm: 1, recoverySeconds: 120, recoveryKind: "jog" },
+  /** Target picked on a repeat ("work") vs. a warm-up / run / cool-down ("easy") block. */
+  zone: { work: 4, easy: 2 },
+  rpe: { work: 7, easy: 3 },
+  /** Smallest value a typed input accepts (distance in user units). */
+  minDistance: 0.01,
+  minSeconds: 1,
+} as const;
