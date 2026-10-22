@@ -322,4 +322,38 @@ describe("training service", () => {
     expect(await scope.sessions.listForGoal(created.value.id, { from: today, to: today })).toEqual([]);
     expect(await doubleBookedDates(scope)).toEqual([]);
   });
+
+  it("a new goal created while a plan runs doesn't take over unless asked", async () => {
+    const scope = await newUser();
+    const settings = await scope.settings.get();
+    const plan = await savedPlan(scope, { weeks: [week("w1", everyDay), week("w2", everyDay)] });
+    const r = await activateCustomPlan(scope, plan.id, today, today);
+    if (!r.ok) throw new Error(r.message);
+    const before = await scope.sessions.listFor({ followId: r.value.id });
+
+    const created = await createGoal(scope, { ...goalInput(), targetTimeSeconds: 6300, notes: null }, { settings, today });
+    expect(created.ok && created.value.status).toBe("upcoming");
+    expect(await getActiveTraining(scope)).toMatchObject({ kind: "plan", owner: { followId: r.value.id } });
+    expect((await scope.planFollows.get(r.value.id))?.status).toBe("active");
+    expect(await scope.sessions.listFor({ followId: r.value.id })).toEqual(before);
+    if (created.ok) expect(await scope.sessions.listForGoal(created.value.id)).toEqual([]);
+  });
+
+  it("a re-activated goal regenerates its future even when a hand-edited future session survived", async () => {
+    const { scope, settings, goal } = await userWithGoal();
+    const [edited] = await scope.sessions.listForGoal(goal.id, { from: "2026-10-27", to: "2026-10-27" });
+    if (!edited) throw new Error("fixture");
+    await scope.sessions.update(edited.id, { targetKm: 4, isUserEdited: true });
+    const plan = await savedPlan(scope, { weeks: [week("w1", everyDay), week("w2", everyDay)] });
+    const r = await activateCustomPlan(scope, plan.id, today, today);
+    if (!r.ok) throw new Error(r.message);
+    expect(await scope.sessions.listForGoal(goal.id, { from: today })).toMatchObject([{ id: edited.id }]);
+
+    const back = await activateGoal(scope, goal.id, { settings, today });
+    expect(back.ok).toBe(true);
+    const future = await scope.sessions.listForGoal(goal.id, { from: today });
+    expect(future.length).toBeGreaterThan(10);
+    expect(future.find((s) => s.id === edited.id)).toMatchObject({ date: "2026-10-27", targetKm: 4, isUserEdited: true });
+    expect(await doubleBookedDates(scope)).toEqual([]);
+  });
 });

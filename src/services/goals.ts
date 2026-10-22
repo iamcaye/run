@@ -10,6 +10,7 @@ import type { LocalDate } from "@/lib/time";
 import type { GoalFormValues } from "@/lib/validation/goal";
 import type { Goal, Settings, UserScope } from "@/server/dal";
 import { createPlanIfMissing, regenerateFuture } from "./plans";
+import { getActiveTraining } from "./training";
 
 export type GoalResult<T> =
   | { ok: true; value: T }
@@ -23,8 +24,9 @@ const invalid = (message: string) => ({ ok: false, code: "invalid_state", messag
 
 /**
  * Activates a goal and makes sure it has a plan: generated from today if it has none, or rebuilt
- * from today if all its sessions are in the past (e.g. it was paused for a custom plan). A custom
- * plan that was active loses its unfrozen future sessions; the days its frozen ones keep are skipped.
+ * from today if all its sessions are in the past or it takes over from a custom plan (whose
+ * activation removed the goal's unfrozen future). A custom plan that was active loses its unfrozen
+ * future sessions; the days its frozen ones keep are skipped.
  */
 async function activateWithPlan(scope: UserScope, id: string, ctx: GoalContext): Promise<Goal | null> {
   const follow = await scope.planFollows.getActive();
@@ -33,7 +35,10 @@ async function activateWithPlan(scope: UserScope, id: string, ctx: GoalContext):
   if (follow) await scope.sessions.deleteFutureUnfrozen({ followId: follow.id }, ctx.today);
   const sessions = await scope.sessions.listForGoal(active.id);
   const needsPlan = sessions.length === 0;
-  const needsFuture = !needsPlan && active.raceDate >= ctx.today && !sessions.some((s) => s.date >= ctx.today);
+  // Taking over from a plan always rebuilds the future (frozen goal sessions are kept); otherwise
+  // only when nothing is left from today on.
+  const needsFuture =
+    !needsPlan && active.raceDate >= ctx.today && (follow !== null || !sessions.some((s) => s.date >= ctx.today));
   if (!needsPlan && !needsFuture) return active;
   // Custom-plan sessions that survived (done or hand-edited) keep their days.
   const taken = await scope.sessions.frozenDatesOfOthers({ goalId: active.id }, ctx.today, { followsOnly: true });
@@ -42,7 +47,7 @@ async function activateWithPlan(scope: UserScope, id: string, ctx: GoalContext):
   return active;
 }
 
-/** The first goal a user creates becomes active automatically. */
+/** The first goal a user creates becomes active automatically, unless a custom plan is being followed. */
 export async function createGoal(
   scope: UserScope,
   values: GoalFormValues,
@@ -50,7 +55,7 @@ export async function createGoal(
   opts: { makeActive?: boolean } = {},
 ): Promise<GoalResult<Goal>> {
   const created = await scope.goals.create(values);
-  const hasActive = (await scope.goals.getActive()) !== null;
+  const hasActive = (await getActiveTraining(scope)) !== null;
   if (opts.makeActive || !hasActive) {
     const active = await activateWithPlan(scope, created.id, ctx);
     if (active) return { ok: true, value: active };
