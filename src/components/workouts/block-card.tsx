@@ -64,7 +64,7 @@ function AmountStepper({
         value={amount.value}
         bounds={distanceBounds(kind, units)}
         format={formatDistanceInput}
-        parse={parseDistance}
+        parse={(s) => parseDistance(s, units)}
         onChange={onChange}
         suffix={units}
       />

@@ -280,14 +280,20 @@ export function switchTarget(d: BlockDisplay, kind: TargetKind, units: Units): B
 
 // --- parsing & formatting ---------------------------------------------------------------------
 
-/** Tolerant "m:ss" pace parser ("4:05", "4:5", "4.05", "4", "4:05 /km") → seconds per unit. */
-export function parsePace(input: string): number | null {
-  const m = /^(\d{1,2})(?:\s*[:.'′]\s*(\d{1,2}))?$/.exec(input.replace(/\/?\s*(min)?\s*\/?\s*(km|mi)?\s*$/i, "").trim());
+/**
+ * Tolerant "m:ss" pace parser ("4:05", "4:5", "4.05", "4", "4:05 /km") → seconds per `units`.
+ * A "/km" or "/mi" suffix naming the other unit is converted; no suffix means `units`.
+ */
+export function parsePace(input: string, units: Units = "km"): number | null {
+  const m = /^(\d{1,2})(?:\s*[:.'′]\s*(\d{1,2}))?\s*(?:\/\s*(km|mi)|(?:min)?\s*\/?\s*(km|mi))?$/i.exec(input.trim());
   if (!m) return null;
   const sec = m[2] === undefined ? 0 : Number(m[2]);
   if (sec >= 60) return null;
   const total = Number(m[1]) * 60 + sec;
-  return total > 0 ? total : null;
+  if (total <= 0) return null;
+  const typed = (m[3] ?? m[4])?.toLowerCase() as Units | undefined;
+  if (!typed || typed === units) return total;
+  return typed === "km" ? total * KM_PER_MI : total / KM_PER_MI;
 }
 
 /** "m:ss" / "h:mm:ss", or a bare number in `bare` units ("90" s, "10" min) → seconds. */
@@ -301,12 +307,15 @@ export function parseTime(input: string, bare: "s" | "min"): number | null {
   return v !== null && v > 0 ? v : null;
 }
 
-/** Positive decimal ("1.5", "1,5", "0.4 km") → number in the user's units. */
-export function parseDistance(input: string): number | null {
+/** Positive decimal ("1.5", "1,5", "0.4 km") → number in `units`; a suffix naming the other unit is converted. */
+export function parseDistance(input: string, units: Units = "km"): number | null {
   const m = /^(\d+(?:\.\d*)?|\.\d+)\s*(km|mi|k)?$/i.exec(input.trim().replace(",", "."));
   if (!m) return null;
   const v = Number(m[1]);
-  return v > 0 ? v : null;
+  if (!(v > 0)) return null;
+  const typed = m[2]?.toLowerCase() === "mi" ? "mi" : m[2] ? "km" : units;
+  if (typed === units) return v;
+  return typed === "km" ? v / KM_PER_MI : v * KM_PER_MI;
 }
 
 /** Up to two decimals, no trailing zeros: "1", "0.4", "1.24". */

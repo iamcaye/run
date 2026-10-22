@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import type { CustomPlanDoc } from "@/lib/custom-plans/types";
+import type { StructureStep } from "@/lib/planning/types";
 import { forUser, type UserScope } from "@/server/dal";
 import { db } from "@/server/db/client";
 import { goal, planFollow, plannedSession } from "@/server/db/schema";
@@ -218,5 +219,16 @@ describe("workouts", () => {
     expect((await scope.workouts.update(w.id, { name: "Tempo 2" }))?.name).toBe("Tempo 2");
     expect(await scope.workouts.delete(w.id)).toBe(true);
     expect(await scope.workouts.get(w.id)).toBeNull();
+  });
+
+  it("round-trips a 6 x 1000 interval workout", async () => {
+    const scope = forUser(await createTestUser("workouts-roundtrip"));
+    const steps: StructureStep[] = [
+      { kind: "warmup", km: 2 },
+      { kind: "reps", reps: 6, repKm: 1, target: { kind: "pace", secPerKm: 240 }, recoverySeconds: 120, recoveryKind: "jog" },
+      { kind: "cooldown", km: 2 },
+    ];
+    const w = await scope.workouts.create({ name: "6 × 1000", type: "intervals", notes: "Controlled", steps });
+    expect((await scope.workouts.get(w.id))?.steps).toEqual(steps);
   });
 });

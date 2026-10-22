@@ -42,7 +42,7 @@ export function TargetPicker({
           value={target.secPerUnit}
           bounds={paceBounds(units)}
           format={formatPaceInput}
-          parse={parsePace}
+          parse={(s) => parsePace(s, units)}
           stepFn={(v, dir) => stepPace(v, dir, units)}
           onChange={(secPerUnit) => onChange({ kind: "pace", secPerUnit })}
           suffix={`/${units}`}

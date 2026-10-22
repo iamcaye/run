@@ -225,6 +225,21 @@ describe("parsers", () => {
     expect(parseDistance("-1")).toBeNull();
     expect(parseDistance("x")).toBeNull();
   });
+  it("accepts a suffix matching the user's units and converts a mismatched one", () => {
+    expect(parseDistance("2 km", "km")).toBe(2);
+    expect(parseDistance("2k", "km")).toBe(2);
+    expect(parseDistance("2 mi", "mi")).toBe(2);
+    expect(parseDistance("1 mi", "km")).toBeCloseTo(1.609344, 6);
+    expect(parseDistance("1 km", "mi")).toBeCloseTo(1 / 1.609344, 6);
+    expect(parseDistance("1.5", "mi")).toBe(1.5);
+  });
+  it("converts a pace typed with the other unit", () => {
+    expect(parsePace("4:05/km", "km")).toBe(245);
+    expect(parsePace("6:30/mi", "mi")).toBe(390);
+    expect(parsePace("4:05/km", "mi")).toBeCloseTo(245 * 1.609344, 6);
+    expect(parsePace("6:30 /mi", "km")).toBeCloseTo(390 / 1.609344, 6);
+    expect(parsePace("6:30", "mi")).toBe(390);
+  });
 });
 
 describe("estimateLabel", () => {

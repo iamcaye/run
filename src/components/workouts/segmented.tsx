@@ -16,8 +16,9 @@ export function Segmented<T extends string | number>({
 }) {
   const name = useId();
   return (
-    <fieldset className="flex items-center justify-between gap-3 text-sm">
-      <legend className={hideLabel ? "sr-only" : "float-left text-muted"}>{label}</legend>
+    // A plain radiogroup (not fieldset/legend): a legend can't be a flex item, which made layout browser-dependent.
+    <div role="radiogroup" aria-label={label} className="flex items-center justify-between gap-3 text-sm">
+      {hideLabel ? null : <span aria-hidden className="text-muted">{label}</span>}
       <div className="ml-auto flex flex-wrap justify-end gap-1">
         {options.map((o) => (
           <label key={String(o.value)} className="cursor-pointer">
@@ -35,6 +36,6 @@ export function Segmented<T extends string | number>({
           </label>
         ))}
       </div>
-    </fieldset>
+    </div>
   );
 }
