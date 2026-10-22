@@ -23,7 +23,8 @@ import type {
 export type AdaptSession = AdjustableSessionFields & {
   id: string;
   date: LocalDate;
-  phase: Phase;
+  /** Null for custom-plan sessions (adaptation never runs on those, but the row type allows it). */
+  phase: Phase | null;
   isUserEdited: boolean;
 };
 

@@ -15,7 +15,7 @@ export default async function SessionPage({ params }: PageProps<"/plan/sessions/
   const { id } = await params;
   const { scope, settings, today } = await requireUserContext();
   const session = z.uuid().safeParse(id).success ? await scope.sessions.get(id) : null;
-  const goal = session ? await scope.goals.get(session.goalId) : null;
+  const goal = session?.goalId ? await scope.goals.get(session.goalId) : null;
   if (!session || !goal || session.type === "race") notFound();
 
   return (

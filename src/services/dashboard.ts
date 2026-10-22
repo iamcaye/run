@@ -61,7 +61,7 @@ export async function getDashboard(scope: UserScope, settings: Settings, today: 
     ? await Promise.all([
         scope.sessions.listForGoal(goal.id),
         scope.adjustments.listForGoal(goal.id),
-        scope.activities.sinceOrGoalStart(metricsFromUtc, goal.id),
+        scope.activities.sinceOrPlanStart(metricsFromUtc, { goalId: goal.id }),
       ])
     : [[], [], await scope.activities.since(metricsFromUtc)];
   const planStart = sessions[0]?.date ?? today;
@@ -99,7 +99,7 @@ export async function getDashboard(scope: UserScope, settings: Settings, today: 
   const phaseByWeek = new Map<LocalDate, Phase>();
   for (const s of sessions) {
     const w = startOfWeek(s.date, weekStart);
-    if (!phaseByWeek.has(w)) phaseByWeek.set(w, s.phase);
+    if (s.phase && !phaseByWeek.has(w)) phaseByWeek.set(w, s.phase);
   }
   const volume = weeklyVolume({ sessions: metricSessions, activities: activities.filter((a) => a.localDate >= planStart), weekStart, asOf: today }).map(
     (w) => ({ ...w, isCurrent: w.weekStart === currentWeek, phase: phaseByWeek.get(w.weekStart) ?? null }),

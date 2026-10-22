@@ -32,7 +32,7 @@ const session = (date: string) => ({
   isUserEdited: false,
 });
 
-describe("activities.sinceOrGoalStart", () => {
+describe("activities.sinceOrPlanStart", () => {
   it("reaches back to the day before the goal's first session when that is earlier", async () => {
     const scope = forUser(await createTestUser("since-plan"));
     const goal = await scope.goals.create(goalInput());
@@ -41,7 +41,7 @@ describe("activities.sinceOrGoalStart", () => {
     const early = await run(scope, "2026-03-09T12:00:00Z"); // the padding day
     const late = await run(scope, "2026-06-01T12:00:00Z");
 
-    const rows = await scope.activities.sinceOrGoalStart(new Date("2026-05-01T00:00:00Z"), goal.id);
+    const rows = await scope.activities.sinceOrPlanStart(new Date("2026-05-01T00:00:00Z"), { goalId: goal.id });
     expect(rows.map((r) => r.id)).toEqual([early.id, late.id]);
     expect(rows[0]).not.toHaveProperty("hrSeries");
   });
@@ -53,8 +53,8 @@ describe("activities.sinceOrGoalStart", () => {
     const after = await run(scope, "2026-04-01T12:00:00Z");
     const since = new Date("2026-03-15T00:00:00Z");
 
-    expect((await scope.activities.sinceOrGoalStart(since, goal.id)).map((r) => r.id)).toEqual([after.id]);
+    expect((await scope.activities.sinceOrPlanStart(since, { goalId: goal.id })).map((r) => r.id)).toEqual([after.id]);
     await scope.sessions.createMany(goal.id, [session("2026-05-01")]);
-    expect((await scope.activities.sinceOrGoalStart(since, goal.id)).map((r) => r.id)).toEqual([after.id]);
+    expect((await scope.activities.sinceOrPlanStart(since, { goalId: goal.id })).map((r) => r.id)).toEqual([after.id]);
   });
 });

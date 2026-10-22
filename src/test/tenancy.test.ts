@@ -17,7 +17,7 @@ const userOwnedTables = (Object.values(appSchema) as unknown[]).filter(
 
 describe("schema", () => {
   it("every user-owned table has a user_id column", () => {
-    expect(userOwnedTables.length).toBeGreaterThanOrEqual(9);
+    expect(userOwnedTables.length).toBeGreaterThanOrEqual(12);
     for (const table of userOwnedTables) {
       const cols = Object.values(getTableColumns(table)).map((c) => c.name);
       expect(cols, getTableName(table)).toContain("user_id");
@@ -46,7 +46,21 @@ describe("tenancy: user B cannot touch user A's data", () => {
     expect(await b.sessions.listForGoal(a.goal.id)).toEqual([]);
     expect(await b.activities.get(a.activity.id)).toBeNull();
     expect(await b.activities.list()).toEqual([]);
-    expect(await b.activities.sinceOrGoalStart(new Date("2020-01-01T00:00:00Z"), a.goal.id)).toEqual([]);
+    expect(await b.activities.sinceOrPlanStart(new Date("2020-01-01T00:00:00Z"), { goalId: a.goal.id })).toEqual([]);
+    expect(
+      await b.activities.sinceOrPlanStart(new Date("2020-01-01T00:00:00Z"), { followId: a.follow.id }),
+    ).toEqual([]);
+    expect(await b.sessions.listFor({ followId: a.follow.id })).toEqual([]);
+    expect(await b.sessions.listFor({ goalId: a.goal.id })).toEqual([]);
+    expect(await b.sessions.linkedSessionIds({ goalId: a.goal.id })).toEqual(new Set());
+    expect(await b.sessions.get(a.followSession.id)).toBeNull();
+    expect(await b.workouts.get(a.workout.id)).toBeNull();
+    expect(await b.workouts.list()).toEqual([]);
+    expect(await b.customPlans.get(a.plan.id)).toBeNull();
+    expect(await b.customPlans.list()).toEqual([]);
+    expect(await b.planFollows.get(a.follow.id)).toBeNull();
+    expect(await b.planFollows.getForPlan(a.plan.id)).toBeNull();
+    expect(await b.planFollows.getActive()).toBeNull();
     expect(await b.activities.routePoints(a.activity.id)).toEqual([]);
     expect(await b.importTokens.list()).toEqual([]);
     expect(await b.rawImports.listRecent()).toEqual([]);
@@ -66,6 +80,16 @@ describe("tenancy: user B cannot touch user A's data", () => {
     await expect(b.activities.replaceRoute(a.activity.id, [])).rejects.toThrow();
     expect(await b.importTokens.revoke(a.token.id)).toBeNull();
     expect(await b.adjustments.decide(a.adjustment.id, "accepted")).toBeNull();
+    expect(await b.workouts.update(a.workout.id, { name: "pwned" })).toBeNull();
+    expect(await b.workouts.delete(a.workout.id)).toBe(false);
+    expect(
+      await b.customPlans.save(a.plan.id, { name: "pwned", description: null, doc: { weeks: [] } }, a.plan.version),
+    ).toBeNull();
+    expect(await b.customPlans.delete(a.plan.id)).toBe(false);
+    expect(await b.planFollows.activate(a.follow.id, "2026-11-02")).toBeNull();
+    expect(await b.planFollows.deactivate(a.follow.id)).toBeNull();
+    await b.planFollows.updateSnapshot(a.follow.id, "pwned", { weeks: [] });
+    expect(await b.sessions.deleteFutureUnfrozen({ followId: a.follow.id }, "2000-01-01")).toBe(0);
 
     // A's data is untouched.
     const goalNow = await a.scope.goals.get(a.goal.id);
@@ -76,6 +100,11 @@ describe("tenancy: user B cannot touch user A's data", () => {
     expect(await a.scope.activities.routePoints(a.activity.id)).toHaveLength(2);
     expect((await a.scope.importTokens.list())[0]?.revokedAt).toBeNull();
     expect((await a.scope.adjustments.get(a.adjustment.id))?.status).toBe("proposed");
+    expect((await a.scope.workouts.get(a.workout.id))?.name).toBe("Tempo");
+    expect(await a.scope.customPlans.get(a.plan.id)).toMatchObject({ name: "My plan", version: a.plan.version });
+    expect(await a.scope.planFollows.get(a.follow.id)).toMatchObject({ planName: "My plan", status: "inactive" });
+    expect(await a.scope.sessions.listFor({ followId: a.follow.id })).toHaveLength(1);
+    expect((await a.scope.goals.get(a.goal.id))?.status).toBe("active");
   });
 
   it("cannot attach own rows to A's rows", async () => {
@@ -94,6 +123,12 @@ describe("tenancy: user B cannot touch user A's data", () => {
         },
       ]),
     ).rejects.toBeInstanceOf(NotOwnedError);
+
+    await expect(b.sessions.replace({ followId: a.follow.id }, [], [])).rejects.toBeInstanceOf(NotOwnedError);
+    await expect(
+      b.sessions.replace({ followId: a.follow.id }, [a.followSession.id], []),
+    ).rejects.toBeInstanceOf(NotOwnedError);
+    await expect(b.planFollows.upsertForPlan(a.plan)).rejects.toBeInstanceOf(NotOwnedError);
 
     await expect(
       b.adjustments.create({

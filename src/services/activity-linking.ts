@@ -14,7 +14,7 @@ export async function linkToPlannedSession(scope: UserScope, activity: Activity,
   const localDate = localDateOf(activity.startAt, timeZone);
   const [sessions, claimed] = await Promise.all([
     scope.sessions.listForGoal(goal.id, { from: localDate, to: localDate }),
-    scope.sessions.linkedSessionIds(goal.id),
+    scope.sessions.linkedSessionIds({ goalId: goal.id }),
   ]);
   const sessionId = matchSession({ localDate, km: activity.km }, sessions, claimed);
   if (!sessionId) return false;

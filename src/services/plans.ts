@@ -92,7 +92,7 @@ export async function createPlanIfMissing(
     today,
     recentActivities: await recentActivities(scope, settings, today),
   });
-  await scope.sessions.replace(goal.id, [], plan.sessions.map((s) => ({ ...s, isUserEdited: false })));
+  await scope.sessions.replace({ goalId: goal.id }, [], plan.sessions.map((s) => ({ ...s, isUserEdited: false })));
   return plan;
 }
 
@@ -108,7 +108,7 @@ export async function regenerateFuture(
 ): Promise<GeneratePlanResult> {
   const [sessions, linked] = await Promise.all([
     scope.sessions.listForGoal(goal.id),
-    scope.sessions.linkedSessionIds(goal.id),
+    scope.sessions.linkedSessionIds({ goalId: goal.id }),
   ]);
   const startDate = sessions[0]?.date && sessions[0].date < today ? sessions[0].date : today;
   const plan = generatePlan({
@@ -126,7 +126,7 @@ export async function regenerateFuture(
       hasActivity: linked.has(s.id),
     })),
   });
-  await scope.sessions.replace(goal.id, plan.deleteIds, plan.sessions.map((s) => ({ ...s, isUserEdited: false })));
+  await scope.sessions.replace({ goalId: goal.id }, plan.deleteIds, plan.sessions.map((s) => ({ ...s, isUserEdited: false })));
   return plan;
 }
 
@@ -151,7 +151,8 @@ export async function editSession(
 ): Promise<EditResult> {
   const session = await scope.sessions.get(sessionId);
   if (!session) return { ok: false, code: "not_found", message: "Session not found" };
-  const goal = await scope.goals.get(session.goalId);
+  // Custom-plan (follow) sessions are edited through the custom-plans service.
+  const goal = session.goalId ? await scope.goals.get(session.goalId) : null;
   if (!goal) return { ok: false, code: "not_found", message: "Session not found" };
   if (!isLocalDate(edit.date) || edit.date > goal.raceDate) {
     return { ok: false, code: "invalid", message: "Pick a date on or before race day" };

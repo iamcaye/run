@@ -2,8 +2,9 @@ import "server-only";
 import { and, asc, desc, eq, getTableColumns, gte, lt, sql } from "drizzle-orm";
 import type { Db } from "@/server/db/client";
 import { activity, plannedSession, routePoint } from "@/server/db/schema";
+import { ownerCondition } from "./owner";
 import { assertOwnsRawImport, assertOwnsSession } from "./ownership";
-import type { Activity, ActivityInput, ActivityPatch, ActivitySummary, RoutePoint } from "./types";
+import type { Activity, ActivityInput, ActivityPatch, ActivitySummary, RoutePoint, SessionOwner } from "./types";
 
 // Lists skip the per-second HR series: it is most of each row and only the activity detail page charts it.
 const { hrSeries: _hrSeries, ...summaryColumns } = getTableColumns(activity);
@@ -37,15 +38,16 @@ export function activitiesRepo(d: Db, userId: string) {
     },
 
     /**
-     * Activities from `since` or the UTC day before the goal's first planned session, whichever is earlier,
-     * oldest first. The plan start is resolved in SQL so callers needn't wait for the sessions query first.
+     * Activities from `since` or the UTC day before the owner's (goal or follow) first planned session,
+     * whichever is earlier, oldest first. The plan start is resolved in SQL so callers needn't wait for
+     * the sessions query first.
      */
-    sinceOrGoalStart(since: Date, goalId: string): Promise<ActivitySummary[]> {
+    sinceOrPlanStart(since: Date, owner: SessionOwner): Promise<ActivitySummary[]> {
       const planStart = d
         .select({ first: sql`min(${plannedSession.date})` })
         .from(plannedSession)
-        .where(and(eq(plannedSession.userId, userId), eq(plannedSession.goalId, goalId)));
-      // LEAST ignores the NULL a goal without sessions yields.
+        .where(and(eq(plannedSession.userId, userId), ownerCondition(owner)));
+      // LEAST ignores the NULL an owner without sessions yields.
       const from = sql`least(${since.toISOString()}::timestamptz, ((${planStart})::timestamp - interval '1 day') at time zone 'UTC')`;
       return d
         .select(summaryColumns)

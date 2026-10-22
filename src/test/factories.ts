@@ -72,5 +72,30 @@ export async function createPopulatedUser(label: string) {
     reason: "Load spiked",
     changes: [],
   });
-  return { userId, scope, goal, session, activity, token, adjustment };
+  const workout = await scope.workouts.create({ name: "Tempo", type: "tempo", notes: null, steps: [] });
+  const created = await scope.customPlans.create({ name: "My plan", description: null });
+  const plan = await scope.customPlans.save(
+    created.id,
+    { name: "My plan", description: null, doc: { weeks: [] } },
+    created.version,
+  );
+  if (!plan || plan === "conflict") throw new Error("plan save failed");
+  const follow = await scope.planFollows.upsertForPlan(plan);
+  await scope.sessions.replace({ followId: follow.id }, [], [
+    {
+      date: "2026-11-03",
+      weekIndex: 0,
+      phase: null,
+      type: "easy",
+      targetKm: 5,
+      targetPaceSecPerKm: null,
+      effortDescription: "Easy",
+      structure: null,
+      isUserEdited: false,
+      sourceKey: "w1:2",
+    },
+  ]);
+  const [followSession] = await scope.sessions.listFor({ followId: follow.id });
+  if (!followSession) throw new Error("no follow session");
+  return { userId, scope, goal, session, activity, token, adjustment, workout, plan, follow, followSession };
 }

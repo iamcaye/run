@@ -12,6 +12,9 @@ Agreed before Phase 1 (2026-10-18).
 - `rate_limit` (fixed-window counters in Postgres) — the only non-user-owned app table.
 - `plan_adjustment.status` gains `superseded`. On accept, each change's `before` is compared with the current session; drifted sessions are skipped and reported.
 - Weekdays are ISO (1 = Mon … 7 = Sun). Local calendar dates are Postgres `date` handled as `YYYY-MM-DD` strings.
+- Custom plans (migration `0002_custom_plans`): `workout` (library), `custom_plan` (doc jsonb + optimistic `version`, bumped on every save; a stale save returns `"conflict"`), `plan_follow` (a user following a plan from `startDate`, with a `snapshot` of the doc; `custom_plan_id` is `ON DELETE SET NULL` so deleting a plan keeps its follow and sessions). One follow per (user, plan) and at most one active follow per user, both partial unique indexes.
+- `planned_session` belongs to a goal **or** a follow: `goal_id` is nullable, `follow_id` added (cascade), and the check `planned_session_one_owner_chk` requires exactly one. The DAL takes a `SessionOwner` (`{ goalId } | { followId }`; `ownerOf(session)` derives it). `phase` is nullable — custom-plan sessions have no periodisation phase. `source_key` records the plan slot a follow session was synced from.
+- A user has one active plan at a time across both tables: activating a follow moves the active goal to `upcoming` and other follows to `inactive`; activating a goal sets the active follow `inactive` — each in one transaction.
 
 ## Tenancy
 - All user data goes through `forUser(userId)` (`src/server/dal`). ESLint forbids importing the raw db elsewhere (allowed: `server/dal`, `server/system`, `server/db`, `server/auth`, `services`, `test`, `scripts`).

@@ -17,8 +17,9 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { LEVELS, SESSION_TYPES } from "@/config/training";
+import type { CustomPlanDoc, WorkoutType } from "@/lib/custom-plans/types";
 import type { HrSample } from "@/lib/import/types";
-import type { AdjustmentChange, SessionStructure } from "@/lib/planning/types";
+import type { AdjustmentChange, SessionStructure, StructureStep } from "@/lib/planning/types";
 import { user } from "./auth";
 
 // ── Enums ────────────────────────────────────────────────────────────────────
@@ -57,6 +58,7 @@ export const adjustmentStatusEnum = pgEnum("adjustment_status", [
   "rejected",
   "superseded",
 ]);
+export const planFollowStatusEnum = pgEnum("plan_follow_status", ["active", "inactive"]);
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -134,17 +136,77 @@ export const goal = pgTable(
   ],
 );
 
+/** A reusable single workout in the user's library. */
+export const workout = pgTable(
+  "workout",
+  {
+    id: id(),
+    userId: userId(),
+    name: text("name").notNull(),
+    type: sessionTypeEnum("type").$type<WorkoutType>().notNull(),
+    notes: text("notes"),
+    steps: jsonb("steps").$type<StructureStep[]>().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("workout_user_id_idx").on(t.userId)],
+);
+
+/** A user-authored plan: weeks of Mon–Sun workout slots, saved with optimistic versioning. */
+export const customPlan = pgTable(
+  "custom_plan",
+  {
+    id: id(),
+    userId: userId(),
+    name: text("name").notNull(),
+    description: text("description"),
+    doc: jsonb("doc").$type<CustomPlanDoc>().notNull().default({ weeks: [] }),
+    version: integer("version").notNull().default(1),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("custom_plan_user_id_idx").on(t.userId)],
+);
+
+/**
+ * A user following a custom plan from `startDate`. Keeps a snapshot of the plan so its sessions
+ * survive the plan being deleted (then `customPlanId` is null).
+ */
+export const planFollow = pgTable(
+  "plan_follow",
+  {
+    id: id(),
+    userId: userId(),
+    customPlanId: uuid("custom_plan_id").references(() => customPlan.id, { onDelete: "set null" }),
+    planName: text("plan_name").notNull(),
+    snapshot: jsonb("snapshot").$type<CustomPlanDoc>().notNull(),
+    startDate: localDate("start_date"),
+    status: planFollowStatusEnum("status").notNull().default("inactive"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex("plan_follow_one_active_per_user").on(t.userId).where(sql`${t.status} = 'active'`),
+    uniqueIndex("plan_follow_user_plan_uq")
+      .on(t.userId, t.customPlanId)
+      .where(sql`${t.customPlanId} is not null`),
+  ],
+);
+
+/** Belongs to exactly one owner: a goal (generated plan) or a plan follow (custom plan). */
 export const plannedSession = pgTable(
   "planned_session",
   {
     id: id(),
     userId: userId(),
-    goalId: uuid("goal_id")
-      .notNull()
-      .references(() => goal.id, { onDelete: "cascade" }),
+    goalId: uuid("goal_id").references(() => goal.id, { onDelete: "cascade" }),
+    followId: uuid("follow_id").references(() => planFollow.id, { onDelete: "cascade" }),
+    /** Stable key of the custom-plan slot this session was synced from (follow sessions only). */
+    sourceKey: text("source_key"),
     date: localDate("date").notNull(),
     weekIndex: integer("week_index").notNull(),
-    phase: phaseEnum("phase").notNull(),
+    /** Null for custom-plan sessions, which have no periodisation phase. */
+    phase: phaseEnum("phase"),
     type: sessionTypeEnum("type").notNull(),
     targetKm: doublePrecision("target_km").notNull(),
     targetPaceSecPerKm: integer("target_pace_sec_per_km"),
@@ -154,7 +216,11 @@ export const plannedSession = pgTable(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [index("planned_session_user_goal_date_idx").on(t.userId, t.goalId, t.date)],
+  (t) => [
+    index("planned_session_user_goal_date_idx").on(t.userId, t.goalId, t.date),
+    index("planned_session_user_follow_date_idx").on(t.userId, t.followId, t.date),
+    check("planned_session_one_owner_chk", sql`(${t.goalId} is null) <> (${t.followId} is null)`),
+  ],
 );
 
 export const rawImport = pgTable(

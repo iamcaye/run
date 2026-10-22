@@ -1,7 +1,7 @@
 import "server-only";
 import { buildMonthGrid, gridRange, type MonthGrid, type YearMonth } from "@/lib/plan-calendar";
 import { addDays, localDateOf, type IsoWeekday, type LocalDate } from "@/lib/time";
-import type { PlannedSession, Settings, UserScope } from "@/server/dal";
+import { ownerOf, type PlannedSession, type Settings, type UserScope } from "@/server/dal";
 
 /** Month grid with the user's activities placed on their local dates. */
 export async function getPlanCalendar(
@@ -16,7 +16,7 @@ export async function getPlanCalendar(
   // Pad the UTC window by a day each side so any time zone's local dates are covered, then filter by local date.
   const [rows, linkedSessionIds] = await Promise.all([
     scope.activities.between(new Date(`${addDays(from, -1)}T00:00:00Z`), new Date(`${addDays(to, 2)}T00:00:00Z`)),
-    sessions.length > 0 ? scope.sessions.linkedSessionIds(sessions[0].goalId) : new Set<string>(),
+    sessions.length > 0 ? scope.sessions.linkedSessionIds(ownerOf(sessions[0])) : new Set<string>(),
   ]);
   const activities = rows
     .map((a) => ({ id: a.id, localDate: localDateOf(a.startAt, settings.timezone), km: a.km, plannedSessionId: a.plannedSessionId }))

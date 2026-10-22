@@ -1,7 +1,7 @@
 import "server-only";
 import { and, desc, eq } from "drizzle-orm";
 import type { Db } from "@/server/db/client";
-import { goal } from "@/server/db/schema";
+import { goal, planFollow } from "@/server/db/schema";
 import type { Goal, GoalInput, GoalPatch, GoalStatus } from "./types";
 
 export function goalsRepo(d: Db, userId: string) {
@@ -53,7 +53,10 @@ export function goalsRepo(d: Db, userId: string) {
       return row ?? null;
     },
 
-    /** Makes `id` the single active goal; the previously active one goes back to `upcoming`. */
+    /**
+     * Makes `id` the single active goal; the previously active one goes back to `upcoming` and any
+     * active plan follow becomes `inactive` (a user follows one plan at a time).
+     */
     async activate(id: string): Promise<Goal | null> {
       return d.transaction(async (tx) => {
         const [target] = await tx.select({ id: goal.id }).from(goal).where(owned(id));
@@ -62,6 +65,10 @@ export function goalsRepo(d: Db, userId: string) {
           .update(goal)
           .set({ status: "upcoming" })
           .where(and(eq(goal.userId, userId), eq(goal.status, "active")));
+        await tx
+          .update(planFollow)
+          .set({ status: "inactive" })
+          .where(and(eq(planFollow.userId, userId), eq(planFollow.status, "active")));
         const [row] = await tx.update(goal).set({ status: "active" }).where(owned(id)).returning();
         return row ?? null;
       });
