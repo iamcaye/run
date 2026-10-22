@@ -5,15 +5,23 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { emptyWeek } from "@/lib/custom-plans/ops";
 import type { CustomPlanDoc } from "@/lib/custom-plans/types";
-import { isLocalDate } from "@/lib/time";
-import { customPlanDocSchema, planMetaSchema } from "@/lib/validation/custom-plan";
+import { isLocalDate, type LocalDate } from "@/lib/time";
+import { planMetaSchema, savePlanInputSchema } from "@/lib/validation/custom-plan";
 import { requireUserContext } from "@/server/context";
+import type { UserScope } from "@/server/dal";
 import { activateCustomPlan, stopCustomPlan, syncFollowSessions } from "@/services/training";
 import { failure, formValues, invalid, type FormState } from "./form-state";
 
 const uuid = z.uuid();
 
-export type SavePlanResult = { status: "saved"; version: number } | { status: "conflict" } | { status: "error"; message: string };
+export type SavePlanResult =
+  | { status: "saved"; version: number }
+  /** The plan is saved, but the followed plan's sessions couldn't be brought in line (retry with `retryPlanSyncAction`). */
+  | { status: "saved_not_synced"; version: number }
+  | { status: "conflict" }
+  | { status: "error"; message: string };
+
+export type SyncPlanResult = { status: "synced" } | { status: "error"; message: string };
 
 function revalidateTraining() {
   revalidatePath("/plan");
@@ -39,27 +47,55 @@ export async function createCustomPlanAction(_prev: FormState, formData: FormDat
  */
 export async function saveCustomPlanAction(
   id: string,
+  // Typed for callers; checked as untrusted input (it may be anything over the wire).
   input: { name: string; description: string | null; doc: CustomPlanDoc; version: number },
 ): Promise<SavePlanResult> {
   const { scope, today } = await requireUserContext();
   if (!uuid.safeParse(id).success) return { status: "error", message: "Plan not found" };
-  const meta = planMetaSchema.safeParse({ name: input.name, description: input.description });
-  if (!meta.success) return { status: "error", message: meta.error.issues[0]?.message ?? "Check the plan's name" };
-  const doc = customPlanDocSchema.safeParse(input.doc);
-  if (!doc.success) return { status: "error", message: "Some workouts are invalid. Check them and try again." };
-  if (!Number.isInteger(input.version)) return { status: "error", message: "Reload the page and try again." };
+  const parsed = savePlanInputSchema.safeParse(input);
+  if (!parsed.success) return { status: "error", message: saveErrorMessage(parsed.error) };
+  const { version, ...values } = parsed.data;
 
-  const saved = await scope.customPlans.save(id, { ...meta.data, doc: doc.data }, input.version);
+  const saved = await scope.customPlans.save(id, values, version);
   if (saved === "conflict") return { status: "conflict" };
   if (!saved) return { status: "error", message: "Plan not found" };
 
-  const follow = await scope.planFollows.getForPlan(id);
-  if (follow?.status === "active") {
-    await syncFollowSessions(scope, follow, saved.doc, today);
-    revalidateTraining();
-  }
   revalidatePath("/plans");
-  return { status: "saved", version: saved.version };
+  const synced = await syncIfFollowed(scope, id, today, saved.doc);
+  return synced === false ? { status: "saved_not_synced", version: saved.version } : { status: "saved", version: saved.version };
+}
+
+/** Re-runs the session sync of a saved plan that is being followed (after `saved_not_synced`). */
+export async function retryPlanSyncAction(id: string): Promise<SyncPlanResult> {
+  const { scope, today } = await requireUserContext();
+  if (!uuid.safeParse(id).success) return { status: "error", message: "Plan not found" };
+  const synced = await syncIfFollowed(scope, id, today);
+  return synced === false ? { status: "error", message: "Your upcoming sessions still couldn't be updated. Try again later." } : { status: "synced" };
+}
+
+/**
+ * Syncs the plan's active follow (if any) to `doc`, or to the stored doc. Null when there was nothing
+ * to sync, false when the sync failed; the saved plan stays as is either way.
+ */
+async function syncIfFollowed(scope: UserScope, id: string, today: LocalDate, doc?: CustomPlanDoc): Promise<boolean | null> {
+  const [follow, plan] = await Promise.all([scope.planFollows.getForPlan(id), doc ? { doc } : scope.customPlans.get(id)]);
+  if (follow?.status !== "active" || !plan) return null;
+  try {
+    await syncFollowSessions(scope, follow, plan.doc, today);
+  } catch (err) {
+    console.error("custom plan sync failed", err);
+    return false;
+  }
+  revalidateTraining();
+  return true;
+}
+
+function saveErrorMessage(error: z.ZodError): string {
+  const issue = error.issues[0];
+  const field = issue?.path[0];
+  if (field === "doc") return "Some workouts are invalid. Check them and try again.";
+  if (field === "name" || field === "description") return issue?.message ?? "Check the plan's name";
+  return "Reload the page and try again.";
 }
 
 /** Deletes a plan; if it is the one being followed, the follow is stopped first. */

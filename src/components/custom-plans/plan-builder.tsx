@@ -32,7 +32,7 @@ export function PlanBuilder({
   isActive: boolean;
   replacesActive: boolean;
 }) {
-  const { state, dispatch, save, saving, status } = usePlanBuilder(plan);
+  const { state, dispatch, save, retrySync, saving, status } = usePlanBuilder(plan);
   const [library, setLibrary] = useState(initialLibrary);
   const [showDescription, setShowDescription] = useState(plan.description !== null);
 
@@ -106,6 +106,16 @@ export function PlanBuilder({
         <p role="alert" className="rounded-xl bg-danger/10 p-3 text-sm text-danger">
           This plan was changed in another tab. Reload to see the latest version.
         </p>
+      ) : null}
+      {status.kind === "syncFailed" ? (
+        <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl bg-danger/10 p-3 text-sm text-danger">
+          <span className="min-w-0 flex-1">
+            {status.message ?? "Plan saved, but your upcoming sessions couldn't be updated."}
+          </span>
+          <Button type="button" variant="secondary" onClick={retrySync} disabled={saving}>
+            {saving ? "Retrying…" : "Retry sync"}
+          </Button>
+        </div>
       ) : null}
       {status.kind === "error" ? <FormError>{status.message}</FormError> : null}
       {nameMissing ? <FormError>Give the plan a name to save it.</FormError> : null}

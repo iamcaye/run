@@ -4,11 +4,17 @@ import { useEffect, useReducer, useRef, useState, useTransition } from "react";
 import { builderReducer, initBuilder, type BuilderAction, type BuilderState } from "@/lib/custom-plans/builder-reducer";
 import { emptyWeek } from "@/lib/custom-plans/ops";
 import type { CustomPlanDoc } from "@/lib/custom-plans/types";
-import { saveCustomPlanAction } from "@/server/actions/custom-plans";
+import { retryPlanSyncAction, saveCustomPlanAction } from "@/server/actions/custom-plans";
 
 export type BuilderPlan = { id: string; name: string; description: string | null; doc: CustomPlanDoc; version: number };
 
-export type SaveStatus = { kind: "idle" } | { kind: "saved" } | { kind: "conflict" } | { kind: "error"; message: string };
+export type SaveStatus =
+  | { kind: "idle" }
+  | { kind: "saved" }
+  /** Saved, but the followed plan's sessions weren't updated; `retrySync` tries again. */
+  | { kind: "syncFailed"; message: string | null }
+  | { kind: "conflict" }
+  | { kind: "error"; message: string };
 
 const newId = () => crypto.randomUUID();
 const reducer = (s: BuilderState, a: BuilderAction) => builderReducer(s, a, newId);
@@ -43,9 +49,9 @@ export function usePlanBuilder(plan: BuilderPlan) {
         doc: sent.doc,
         version: version.current,
       });
-      if (r.status === "saved") {
+      if (r.status === "saved" || r.status === "saved_not_synced") {
         version.current = r.version;
-        setStatus({ kind: "saved" });
+        setStatus(r.status === "saved" ? { kind: "saved" } : { kind: "syncFailed", message: null });
         // Edits made while the request was in flight stay unsaved.
         const now = latest.current;
         if (now.doc === sent.doc && now.name === sent.name && now.description === sent.description) dispatch({ type: "saved" });
@@ -57,10 +63,17 @@ export function usePlanBuilder(plan: BuilderPlan) {
     });
   };
 
+  const retrySync = () => {
+    startSaving(async () => {
+      const r = await retryPlanSyncAction(plan.id);
+      setStatus(r.status === "synced" ? { kind: "saved" } : { kind: "syncFailed", message: r.message });
+    });
+  };
+
   const act = (a: BuilderAction) => {
     dispatch(a);
     if (status.kind === "saved" || status.kind === "error") setStatus({ kind: "idle" });
   };
 
-  return { state, dispatch: act, save, saving, status };
+  return { state, dispatch: act, save, retrySync, saving, status };
 }
