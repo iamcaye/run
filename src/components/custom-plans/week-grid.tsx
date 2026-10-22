@@ -72,6 +72,7 @@ export function WeekGrid({
             slot={{ week: index, day }}
             workout={week.days[day - 1] ?? null}
             selected={state.selected?.week === index && state.selected.day === day}
+            weekCount={count}
             library={library}
             units={units}
             dispatch={dispatch}

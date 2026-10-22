@@ -4,6 +4,7 @@ import type { DragEvent } from "react";
 import { useState } from "react";
 import { StructureBar } from "@/components/plan/structure-bar";
 import type { BuilderAction } from "@/lib/custom-plans/builder-reducer";
+import { parseDragPayload, type DragPayload } from "@/lib/custom-plans/drag";
 import { estimateWorkout } from "@/lib/custom-plans/estimate";
 import type { DaySlot, PlanWorkout } from "@/lib/custom-plans/types";
 import type { StepTarget, StructureStep } from "@/lib/planning/types";
@@ -13,7 +14,6 @@ import type { LibraryWorkout } from "@/server/actions/workouts";
 
 /** dataTransfer type of everything draggable in the builder. */
 export const DRAG_TYPE = "application/x-plan-workout";
-export type DragPayload = { kind: "library"; id: string } | { kind: "slot"; slot: DaySlot };
 
 export function startDrag(e: DragEvent, payload: DragPayload) {
   e.dataTransfer.setData(DRAG_TYPE, JSON.stringify(payload));
@@ -49,13 +49,15 @@ type Props = {
   slot: DaySlot;
   workout: PlanWorkout | null;
   selected: boolean;
+  /** Weeks in the plan, to ignore drops that point past its end. */
+  weekCount: number;
   library: LibraryWorkout[];
   units: Units;
   dispatch: (a: BuilderAction) => void;
 };
 
 /** One day of the week grid: a workout card (draggable, tap to edit) or the ways to fill the day. */
-export function DayCell({ slot, workout, selected, library, units, dispatch }: Props) {
+export function DayCell({ slot, workout, selected, weekCount, library, units, dispatch }: Props) {
   const [over, setOver] = useState(false);
   const label = WEEKDAY_LABELS[slot.day];
 
@@ -70,7 +72,8 @@ export function DayCell({ slot, workout, selected, library, units, dispatch }: P
     const raw = e.dataTransfer.getData(DRAG_TYPE);
     if (!raw) return;
     e.preventDefault();
-    const p = JSON.parse(raw) as DragPayload;
+    const p = parseDragPayload(raw, { weekCount, libraryIds: new Set(library.map((l) => l.id)) });
+    if (!p) return;
     if (p.kind === "slot") {
       if (p.slot.week !== slot.week || p.slot.day !== slot.day) dispatch({ type: "move", from: p.slot, to: slot });
       return;
