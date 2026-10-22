@@ -1,6 +1,6 @@
 import type { SessionType } from "@/config/training";
-import { formatDistance, formatPace, type Units } from "@/lib/units";
-import type { Phase, PlanWarning, StructureStep } from "./types";
+import { formatDistance, formatDuration, formatPace, type Units } from "@/lib/units";
+import type { Phase, PlanWarning, StepTarget, StructureStep } from "./types";
 
 export const SESSION_LABELS: Readonly<Record<SessionType, string>> = {
   easy: "Easy",
@@ -27,19 +27,52 @@ export const QUALITY_TYPES: ReadonlySet<string> = new Set(["tempo", "intervals",
 /** Session types a user can pick when editing (the race itself is fixed). */
 export const EDITABLE_SESSION_TYPES = ["easy", "long", "tempo", "intervals", "race_pace", "strides", "rest"] as const;
 
+/** "10 min" for whole minutes under an hour, otherwise "m:ss" / "h:mm:ss". */
+function blockDuration(seconds: number): string {
+  if (seconds < 3600 && seconds % 60 === 0) return `${seconds / 60} min`;
+  return formatDuration(seconds);
+}
+
+/** Per-rep duration: "20 s" under a minute (generated strides), else "1:00". */
+function repDuration(seconds: number): string {
+  return seconds < 60 ? `${seconds} s` : formatDuration(seconds);
+}
+
+function targetText(target: StepTarget, units: Units): string {
+  switch (target.kind) {
+    case "pace":
+      return formatPace(target.secPerKm, units).replace(" /", "/");
+    case "hr_zone":
+      return `Z${target.zone}`;
+    case "rpe":
+      return `RPE ${target.rpe}`;
+  }
+}
+
+function recoveryText(step: Extract<StructureStep, { kind: "reps" }>, units: Units): string {
+  const label = step.recoveryKind ?? "easy";
+  if (step.recoveryKm !== undefined) return `${formatDistance(step.recoveryKm, units)} ${label} between`;
+  const secs = step.recoverySeconds ?? 0;
+  return `${step.recoveryKind ? formatDuration(secs) : `${secs} s`} ${label} between`;
+}
+
 export function describeStep(step: StructureStep, units: Units): string {
   const at = (pace?: number) => (pace ? ` @ ${formatPace(pace, units)}` : "");
+  const atStep = (s: { target?: StepTarget; paceSecPerKm?: number }) =>
+    s.target ? ` @ ${targetText(s.target, units)}` : at(s.paceSecPerKm);
+  const size = (s: { km?: number; seconds?: number }) =>
+    s.km !== undefined ? formatDistance(s.km, units) : blockDuration(s.seconds ?? 0);
   switch (step.kind) {
     case "warmup":
-      return `${formatDistance(step.km, units)} warm-up, easy`;
+      return `${size(step)} warm-up, easy${step.target ? ` @ ${targetText(step.target, units)}` : ""}`;
     case "cooldown":
-      return `${formatDistance(step.km, units)} cool-down, easy`;
+      return `${size(step)} cool-down, easy${step.target ? ` @ ${targetText(step.target, units)}` : ""}`;
     case "steady":
-      return `${formatDistance(step.km, units)}${at(step.paceSecPerKm)}${step.effort && !step.paceSecPerKm ? ` — ${step.effort}` : ""}`;
+      return `${size(step)}${atStep(step)}${step.effort && !step.paceSecPerKm && !step.target ? ` — ${step.effort}` : ""}`;
     case "reps": {
-      const rep = step.repKm ? formatDistance(step.repKm, units, step.repKm < 1 ? 2 : 1) : `${step.repSeconds ?? 0} s`;
-      const effort = step.effort && !step.paceSecPerKm ? ` — ${step.effort}` : "";
-      return `${step.reps} × ${rep}${at(step.paceSecPerKm)}, ${step.recoverySeconds} s easy between${effort}`;
+      const rep = step.repKm ? formatDistance(step.repKm, units, step.repKm < 1 ? 2 : 1) : repDuration(step.repSeconds ?? 0);
+      const effort = step.effort && !step.paceSecPerKm && !step.target ? ` — ${step.effort}` : "";
+      return `${step.reps} × ${rep}${atStep(step)}, ${recoveryText(step, units)}${effort}`;
     }
   }
 }

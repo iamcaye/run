@@ -87,10 +87,24 @@ export const HARD_TYPES: ReadonlySet<SessionType> = new Set(["tempo", "intervals
 /** Pace zone a step runs at; resolved to `paceSecPerKm` when the goal has paces. */
 export type PaceZone = "easy" | "long" | "tempo" | "intervals" | "race_pace";
 
-/** A block of a quality session, e.g. "6 × 800 m @ intervals pace, 90 s jog". */
+export type HrZone = 1 | 2 | 3 | 4 | 5;
+
+/** Explicit intensity target for a block (custom plans). */
+export type StepTarget =
+  | { kind: "pace"; secPerKm: number }
+  | { kind: "hr_zone"; zone: HrZone }
+  | { kind: "rpe"; rpe: number }; // integer 1–10
+
+export type RecoveryKind = "jog" | "walk" | "stand";
+
+/**
+ * A block of a session, e.g. "6 × 800 m @ intervals pace, 90 s jog".
+ * Exactly one of `km`/`seconds` (and of `recoverySeconds`/`recoveryKm`) is set; custom-plan
+ * validation enforces this, not the type. Generated plans only write `km` + zone/pace/effort.
+ */
 export type StructureStep =
-  | { kind: "warmup"; km: number }
-  | { kind: "cooldown"; km: number }
+  | { kind: "warmup"; km?: number; seconds?: number; target?: StepTarget }
+  | { kind: "cooldown"; km?: number; seconds?: number; target?: StepTarget }
   | {
       kind: "reps";
       reps: number;
@@ -100,9 +114,20 @@ export type StructureStep =
       zone?: PaceZone;
       paceSecPerKm?: number;
       effort?: string;
-      recoverySeconds: number;
+      target?: StepTarget;
+      recoverySeconds?: number;
+      recoveryKm?: number;
+      recoveryKind?: RecoveryKind;
     }
-  | { kind: "steady"; km: number; zone?: PaceZone; paceSecPerKm?: number; effort?: string };
+  | {
+      kind: "steady";
+      km?: number;
+      seconds?: number;
+      zone?: PaceZone;
+      paceSecPerKm?: number;
+      effort?: string;
+      target?: StepTarget;
+    };
 
 export type SessionStructure = { steps: StructureStep[] };
 

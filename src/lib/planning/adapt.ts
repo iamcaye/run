@@ -238,8 +238,8 @@ export function expectedSessionPace(s: Pick<AdaptSession, "structure" | "targetK
   let km = 0;
   let secs = 0;
   for (const step of s.structure.steps) {
-    const stepKm =
-      step.kind === "reps" ? step.reps * (step.repKm ?? 0) : step.km;
+    // Time-based blocks only occur in custom plans, which adaptation never sees.
+    const stepKm = step.kind === "reps" ? step.reps * (step.repKm ?? 0) : (step.km ?? 0);
     const pace = step.kind === "warmup" || step.kind === "cooldown" ? easy : (step.paceSecPerKm ?? s.targetPaceSecPerKm);
     if (!pace || stepKm <= 0) continue;
     km += stepKm;
@@ -317,7 +317,7 @@ function scaleWeek(
 function scaleStructure(structure: SessionStructure | null, factor: number): SessionStructure | null {
   if (!structure) return null;
   return {
-    steps: structure.steps.map((step) => (step.kind === "steady" ? { ...step, km: roundTo(step.km * factor) } : step)),
+    steps: structure.steps.map((step) => (step.kind === "steady" && step.km !== undefined ? { ...step, km: roundTo(step.km * factor) } : step)),
   };
 }
 
