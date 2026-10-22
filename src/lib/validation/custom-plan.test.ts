@@ -82,6 +82,12 @@ describe("customPlanDocSchema", () => {
     expect(customPlanDocSchema.safeParse({ weeks: [week("")] }).success).toBe(false);
     expect(customPlanDocSchema.safeParse({ weeks: [week("x".repeat(65))] }).success).toBe(false);
   });
+  it("rejects duplicate week ids (sessions are keyed by week id and day)", () => {
+    const r = customPlanDocSchema.safeParse({ weeks: [week("a"), week("b"), week("a")] });
+    expect(r.success).toBe(false);
+    expect(r.error?.issues[0]?.path).toEqual(["weeks", 2, "id"]);
+    expect(customPlanDocSchema.safeParse({ weeks: [week("a"), week("b")] }).success).toBe(true);
+  });
 });
 
 describe("planMetaSchema", () => {

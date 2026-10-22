@@ -250,6 +250,7 @@ export const WORKOUT_LIMITS = {
   maxPaceSecPerKm: 900,
   nameMax: 80,
   notesMax: 500,
+  weekIdMax: 64,
 } as const;
 
 /** −/+ increments of the workout editor (distances in the user's units, times in seconds). */

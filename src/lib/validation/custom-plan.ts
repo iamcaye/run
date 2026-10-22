@@ -71,11 +71,19 @@ export const customPlanDocSchema = z.object({
   weeks: z
     .array(
       z.object({
-        id: z.string().min(1).max(64),
+        id: z.string().min(1).max(L.weekIdMax),
         days: z.array(planWorkoutSchema.nullable()).length(7),
       }),
     )
-    .max(L.maxWeeks),
+    .max(L.maxWeeks)
+    .superRefine((weeks, ctx) => {
+      // Plan sessions are keyed by `${weekId}:${day}`: a repeated id would make two weeks collide.
+      const seen = new Set<string>();
+      weeks.forEach((w, i) => {
+        if (seen.has(w.id)) ctx.addIssue({ code: "custom", message: "Duplicate week id", path: [i, "id"] });
+        seen.add(w.id);
+      });
+    }),
 }) satisfies z.ZodType<CustomPlanDoc>;
 
 export const planMetaSchema = z.object({
