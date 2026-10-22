@@ -4,7 +4,7 @@ import { generatePlan } from "@/lib/planning/generate";
 import { goalInputArb, settingsArb } from "@/lib/planning/test-arbitraries";
 import type { PlanWorkout } from "@/lib/custom-plans/types";
 import { z } from "zod";
-import { customPlanDocSchema, planMetaSchema, planWorkoutSchema, stepSchema } from "./custom-plan";
+import { customPlanDocSchema, planMetaSchema, planWorkoutSchema, savePlanInputSchema, stepSchema } from "./custom-plan";
 
 const workout = (steps: unknown[], extra: object = {}) => ({
   name: "Intervals",
@@ -112,5 +112,23 @@ describe("generated plans", () => {
       }),
       { numRuns: 100 },
     );
+  });
+});
+
+describe("savePlanInputSchema", () => {
+  const valid = { name: " Spring 10k ", description: null, doc: { weeks: [week()] }, version: 3 };
+
+  it("accepts a builder save and trims the name", () => {
+    expect(savePlanInputSchema.parse(valid)).toEqual({ ...valid, name: "Spring 10k" });
+  });
+
+  it("rejects non-object input without throwing", () => {
+    for (const input of [null, undefined, "x", 42, []]) expect(savePlanInputSchema.safeParse(input).success).toBe(false);
+  });
+
+  it("rejects a bad name, doc or version", () => {
+    expect(savePlanInputSchema.safeParse({ ...valid, name: "  " }).success).toBe(false);
+    expect(savePlanInputSchema.safeParse({ ...valid, doc: { weeks: [week("w1", [])] } }).success).toBe(false);
+    for (const version of [0, 1.5, "3", undefined]) expect(savePlanInputSchema.safeParse({ ...valid, version }).success).toBe(false);
   });
 });

@@ -90,3 +90,9 @@ export const planMetaSchema = z.object({
   name: z.string().trim().min(1).max(L.nameMax),
   description: z.string().max(L.notesMax).nullable(),
 });
+
+/** Everything the builder sends on save, checked as one value (the action's input is untrusted). */
+export const savePlanInputSchema = planMetaSchema.extend({
+  doc: customPlanDocSchema,
+  version: z.number().int().min(1),
+});
