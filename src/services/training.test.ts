@@ -1,5 +1,5 @@
 import { count, eq, gt } from "drizzle-orm";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { CustomPlanDoc, PlanWorkout } from "@/lib/custom-plans/types";
 import { isoWeekday } from "@/lib/time";
 import { forUser, type UserScope } from "@/server/dal";
@@ -10,7 +10,7 @@ import { linkToPlannedSession } from "./activity-linking";
 import { getDashboard } from "./dashboard";
 import { activateGoal, createGoal } from "./goals";
 import { editSession } from "./plans";
-import { activateCustomPlan, getActiveTraining, stopCustomPlan, syncFollowSessions } from "./training";
+import { activateCustomPlan, getActiveTraining, resolveFollowSource, stopCustomPlan, syncFollowSessions } from "./training";
 import { ensureWeeklyAdaptation } from "./weekly-adaptation";
 
 // Thursday.
@@ -140,7 +140,7 @@ describe("training service", () => {
     if (!saved || saved === "conflict") throw new Error("save");
     const follow = await scope.planFollows.get(r.value.id);
     if (!follow) throw new Error("follow");
-    await syncFollowSessions(scope, follow, saved.doc, today);
+    expect(await syncFollowSessions(scope, follow, await resolveFollowSource(scope, follow), today)).toBe("applied");
 
     const after = await scope.sessions.listFor({ followId: r.value.id });
     expect(after.map((s) => s.date)).toEqual(before.map((s) => s.date));
@@ -154,8 +154,27 @@ describe("training service", () => {
     const scope = await newUser();
     const plan = await savedPlan(scope, { weeks: [week("w1", [4, 5])] });
     const follow = await scope.planFollows.upsertForPlan(plan);
-    await syncFollowSessions(scope, follow, plan.doc, today);
+    expect(await syncFollowSessions(scope, follow, await resolveFollowSource(scope, follow), today)).toBe("inactive");
     expect(await scope.sessions.listFor({ followId: follow.id })).toEqual([]);
+  });
+
+  it("sync retries a stale write once, then throws", async () => {
+    const scope = await newUser();
+    const plan = await savedPlan(scope, { weeks: [week("w1", [4, 5, 6]), week("w2", [4, 5, 6])] });
+    const r = await activateCustomPlan(scope, plan.id, today, today);
+    if (!r.ok) throw new Error(r.message);
+    const source = await resolveFollowSource(scope, r.value);
+
+    const applySync = vi.fn(scope.planFollows.applySync);
+    applySync.mockResolvedValueOnce("stale");
+    const flaky = { ...scope, planFollows: { ...scope.planFollows, applySync } };
+    expect(await syncFollowSessions(flaky, r.value, source, today)).toBe("applied");
+    expect(applySync).toHaveBeenCalledTimes(2);
+
+    const alwaysStale = vi.fn(async () => "stale" as const);
+    const stuck = { ...scope, planFollows: { ...scope.planFollows, applySync: alwaysStale } };
+    await expect(syncFollowSessions(stuck, r.value, source, today)).rejects.toThrow();
+    expect(alwaysStale).toHaveBeenCalledTimes(2);
   });
 
   it("refuses empty plan", async () => {

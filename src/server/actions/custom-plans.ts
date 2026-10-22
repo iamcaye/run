@@ -8,8 +8,8 @@ import type { CustomPlanDoc } from "@/lib/custom-plans/types";
 import { isLocalDate, type LocalDate } from "@/lib/time";
 import { planMetaSchema, savePlanInputSchema } from "@/lib/validation/custom-plan";
 import { requireUserContext } from "@/server/context";
-import type { UserScope } from "@/server/dal";
-import { activateCustomPlan, stopCustomPlan, syncFollowSessions } from "@/services/training";
+import type { CustomPlan, UserScope } from "@/server/dal";
+import { activateCustomPlan, ownPlanSource, stopCustomPlan, syncFollowSessions } from "@/services/training";
 import { failure, formValues, invalid, type FormState } from "./form-state";
 
 const uuid = z.uuid();
@@ -61,7 +61,7 @@ export async function saveCustomPlanAction(
   if (!saved) return { status: "error", message: "Plan not found" };
 
   revalidatePath("/plans");
-  const synced = await syncIfFollowed(scope, id, today, saved.doc);
+  const synced = await syncIfFollowed(scope, id, today, saved);
   return synced === false ? { status: "saved_not_synced", version: saved.version } : { status: "saved", version: saved.version };
 }
 
@@ -74,14 +74,14 @@ export async function retryPlanSyncAction(id: string): Promise<SyncPlanResult> {
 }
 
 /**
- * Syncs the plan's active follow (if any) to `doc`, or to the stored doc. Null when there was nothing
- * to sync, false when the sync failed; the saved plan stays as is either way.
+ * Syncs the plan's active follow (if any) to `saved`, or to the stored plan. Null when there was
+ * nothing to sync, false when the sync failed; the saved plan stays as is either way.
  */
-async function syncIfFollowed(scope: UserScope, id: string, today: LocalDate, doc?: CustomPlanDoc): Promise<boolean | null> {
-  const [follow, plan] = await Promise.all([scope.planFollows.getForPlan(id), doc ? { doc } : scope.customPlans.get(id)]);
+async function syncIfFollowed(scope: UserScope, id: string, today: LocalDate, saved?: CustomPlan): Promise<boolean | null> {
+  const [follow, plan] = await Promise.all([scope.planFollows.getForPlan(id), saved ?? scope.customPlans.get(id)]);
   if (follow?.status !== "active" || !plan) return null;
   try {
-    await syncFollowSessions(scope, follow, plan.doc, today);
+    if ((await syncFollowSessions(scope, follow, ownPlanSource(plan), today)) === "inactive") return null;
   } catch (err) {
     console.error("custom plan sync failed", err);
     return false;

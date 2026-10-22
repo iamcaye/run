@@ -314,12 +314,14 @@ describe("share state and shared follows", () => {
   it("setShare stores the token and flag", async () => {
     const scope = forUser(await createTestUser("share-set"));
     const { plan } = await followFor(scope);
-    expect(await scope.customPlans.setShare(plan.id, { shareToken: "tok-abc", shareEnabled: true })).toEqual({
-      shareToken: "tok-abc",
+    // Share tokens are unique across users and the test database persists between runs.
+    const token = `tok-${randomUUID()}`;
+    expect(await scope.customPlans.setShare(plan.id, { shareToken: token, shareEnabled: true })).toEqual({
+      shareToken: token,
       shareEnabled: true,
     });
     expect(await scope.customPlans.setShare(plan.id, { shareEnabled: false })).toEqual({
-      shareToken: "tok-abc",
+      shareToken: token,
       shareEnabled: false,
     });
   });
