@@ -5,13 +5,13 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { env } from "@/config/env";
 import { emptyWeek } from "@/lib/custom-plans/ops";
-import { sharePath } from "@/lib/custom-plans/share";
+import { isShareToken, sharePath } from "@/lib/custom-plans/share";
 import type { CustomPlanDoc } from "@/lib/custom-plans/types";
 import { isLocalDate, type LocalDate } from "@/lib/time";
 import { planMetaSchema, savePlanInputSchema } from "@/lib/validation/custom-plan";
 import { requireUserContext } from "@/server/context";
 import type { CustomPlan, UserScope } from "@/server/dal";
-import { updatePlanShare } from "@/services/sharing";
+import { followSharedPlan, updatePlanShare } from "@/services/sharing";
 import { activateCustomPlan, ownPlanSource, stopCustomPlan, syncFollowSessions } from "@/services/training";
 import { failure, formValues, invalid, type FormState } from "./form-state";
 
@@ -151,4 +151,22 @@ export async function updatePlanShareAction(id: string, op: "enable" | "disable"
   if (!share) return { status: "error", message: "Plan not found" };
   revalidatePath(`/plans/${id}`);
   return { status: "ok", shareUrl: share.shareToken ? `${env().BETTER_AUTH_URL}${sharePath(share.shareToken)}` : null, enabled: share.shareEnabled };
+}
+
+/** Follows the plan behind a share link; activates it now or just adds it to My plans. */
+export async function followSharedPlanAction(token: string, _prev: FormState, formData: FormData): Promise<FormState> {
+  const { scope, today } = await requireUserContext();
+  if (!isShareToken(token)) return failure("This link is no longer active.");
+  const parsed = z
+    .object({ startDate: z.string().refine(isLocalDate, "Pick a valid date").optional() })
+    .safeParse(formValues(formData));
+  if (!parsed.success) return invalid(parsed.error);
+  const activate = formData.get("activate") === "on";
+
+  const result = await followSharedPlan(scope, token, { activate, startDate: parsed.data.startDate ?? today }, today);
+  if (!result.ok) return failure(result.code === "inactive" ? "This link is no longer active." : result.message);
+  revalidateTraining();
+  revalidatePath("/plans");
+  if (result.kind === "own") redirect(`/plans/${result.planId}`);
+  redirect(result.activated ? "/plan" : `/plans/shared/${result.followId}`);
 }

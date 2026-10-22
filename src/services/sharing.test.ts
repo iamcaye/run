@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { toSessionDrafts } from "@/lib/custom-plans/schedule";
 import type { CustomPlanDoc, PlanWorkout } from "@/lib/custom-plans/types";
 import { forUser, type CustomPlan, type UserScope } from "@/server/dal";
-import { createTestUser } from "@/test/factories";
+import { createTestUser, goalInput } from "@/test/factories";
 import { editSession } from "./plans";
 import { duplicateFollowedPlan, followSharedPlan, propagatePlanUpdate, updatePlanShare } from "./sharing";
 import { activateCustomPlan, activateFollow, catchUpActiveFollow, resolveFollowSource } from "./training";
@@ -222,6 +222,19 @@ describe("sharing service", () => {
     await updatePlanShare(alice, plan.id, "disable");
     const off = await followSharedPlan(bob, token, { activate: false, startDate: today }, today);
     expect(off.ok === false && off.code).toBe("inactive");
+  });
+
+  it("following without activation leaves the active goal alone and schedules nothing", async () => {
+    const { token } = await sharedPlan();
+    const bob = await user("Bob");
+    const goal = await bob.goals.create(goalInput());
+    await bob.goals.activate(goal.id);
+    const r = await follow(bob, token, false);
+    expect(r.activated).toBe(false);
+    expect(await bob.planFollows.get(r.followId)).toMatchObject({ status: "inactive" });
+    expect(await bob.sessions.listFor({ followId: r.followId })).toEqual([]);
+    expect(await bob.planFollows.getActive()).toBeNull();
+    expect((await bob.goals.getActive())?.id).toBe(goal.id);
   });
 
   it("updatePlanShare: owner only, enable keeps the token, regenerate changes it", async () => {

@@ -7,7 +7,7 @@ import { addDays, isoWeekday, type LocalDate } from "@/lib/time";
 import { activateCustomPlanAction } from "@/server/actions/custom-plans";
 
 /** Next Monday, or today when today is a Monday (plan weeks run Mon–Sun). */
-function nextMonday(today: LocalDate): LocalDate {
+export function nextMonday(today: LocalDate): LocalDate {
   return addDays(today, (8 - isoWeekday(today)) % 7);
 }
 

@@ -1,13 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, type FormEvent } from "react";
 import { authClient } from "@/components/auth/auth-client";
 import { AuthCard, Button, Field, FormError } from "@/components/ui/form";
+import { followPath, isShareToken } from "@/lib/custom-plans/share";
 
 export default function SignUpPage() {
+  return (
+    <Suspense>
+      <SignUpForm />
+    </Suspense>
+  );
+}
+
+function SignUpForm() {
   const router = useRouter();
+  const planParam = useSearchParams().get("plan");
+  const plan = isShareToken(planParam) ? planParam : null;
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -23,7 +34,7 @@ export default function SignUpPage() {
     });
     setPending(false);
     if (error) return setError(error.message ?? "Could not create account");
-    router.replace("/onboarding");
+    router.replace(plan ? `/onboarding?plan=${plan}` : "/onboarding");
     router.refresh();
   }
 
@@ -46,7 +57,7 @@ export default function SignUpPage() {
         </Button>
       </form>
       <p className="text-sm text-muted">
-        Already have an account? <Link href="/sign-in">Sign in</Link>
+        Already have an account? <Link href={plan ? `/sign-in?next=${encodeURIComponent(followPath(plan))}` : "/sign-in"}>Sign in</Link>
       </p>
     </AuthCard>
   );
