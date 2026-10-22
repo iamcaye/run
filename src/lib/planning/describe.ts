@@ -41,7 +41,7 @@ function repDuration(seconds: number): string {
 function targetText(target: StepTarget, units: Units): string {
   switch (target.kind) {
     case "pace":
-      return formatPace(target.secPerKm, units).replace(" /", "/");
+      return formatPace(target.secPerKm, units);
     case "hr_zone":
       return `Z${target.zone}`;
     case "rpe":

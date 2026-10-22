@@ -6,7 +6,7 @@ describe("describeStep", () => {
     expect(describeStep({ kind: "warmup", seconds: 600 }, "km")).toBe("10 min warm-up, easy");
     expect(
       describeStep({ kind: "reps", reps: 6, repKm: 1, target: { kind: "pace", secPerKm: 240 }, recoverySeconds: 120, recoveryKind: "jog" }, "km"),
-    ).toBe("6 × 1.0 km @ 4:00/km, 2:00 jog between");
+    ).toBe("6 × 1.0 km @ 4:00 /km, 2:00 jog between");
     expect(describeStep({ kind: "steady", seconds: 1200, target: { kind: "hr_zone", zone: 3 } }, "km")).toBe("20 min @ Z3");
     expect(
       describeStep({ kind: "reps", reps: 8, repSeconds: 60, target: { kind: "rpe", rpe: 8 }, recoveryKm: 0.2, recoveryKind: "walk" }, "km"),
