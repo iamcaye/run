@@ -51,6 +51,22 @@ export function customPlansRepo(d: Db, userId: string) {
       return exists ? "conflict" : null;
     },
 
+    /** Sets the share token and/or flag. Returns null when the plan isn't ours. */
+    async setShare(
+      id: string,
+      patch: { shareToken?: string; shareEnabled: boolean },
+    ): Promise<{ shareToken: string | null; shareEnabled: boolean } | null> {
+      const [row] = await d
+        .update(customPlan)
+        .set({
+          shareEnabled: patch.shareEnabled,
+          ...(patch.shareToken !== undefined ? { shareToken: patch.shareToken } : {}),
+        })
+        .where(owned(id))
+        .returning({ shareToken: customPlan.shareToken, shareEnabled: customPlan.shareEnabled });
+      return row ?? null;
+    },
+
     /** Follows of this plan keep their snapshot and sessions (`customPlanId` becomes null). */
     async delete(id: string): Promise<boolean> {
       const rows = await d.delete(customPlan).where(owned(id)).returning({ id: customPlan.id });

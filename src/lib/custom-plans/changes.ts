@@ -2,7 +2,8 @@ import type { SessionType } from "@/config/training";
 import type { StructureStep } from "@/lib/planning/types";
 import type { LocalDate } from "@/lib/time";
 
-export type SessionBrief = { type: SessionType; km: number };
+/** `stepsKey` is for equality only (never displayed): the JSON of the session's steps. */
+export type SessionBrief = { type: SessionType; km: number; stepsKey: string };
 export type PlanChange = { date: LocalDate; week: number; before: SessionBrief | null; after: SessionBrief | null };
 export type SyncedSession = {
   date: LocalDate;
@@ -12,11 +13,11 @@ export type SyncedSession = {
   structure: { steps: StructureStep[] } | null;
 };
 
-const brief = (s: SyncedSession): SessionBrief => ({ type: s.type, km: s.targetKm });
-const sameBrief = (a: SessionBrief | null, b: SessionBrief | null) =>
-  a === b || (a !== null && b !== null && a.type === b.type && a.km === b.km);
-const byDate = (a: PlanChange, b: PlanChange) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
 const stepsKey = (s: SyncedSession) => JSON.stringify(s.structure?.steps ?? null);
+const brief = (s: SyncedSession): SessionBrief => ({ type: s.type, km: s.targetKm, stepsKey: stepsKey(s) });
+const sameBrief = (a: SessionBrief | null, b: SessionBrief | null) =>
+  a === b || (a !== null && b !== null && a.type === b.type && a.km === b.km && a.stepsKey === b.stepsKey);
+const byDate = (a: PlanChange, b: PlanChange) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
 
 /** Pairs removed and added sessions by date; drops pairs whose type, km and steps are equal. Sorted by date. */
 export function sessionChanges(removed: readonly SyncedSession[], added: readonly SyncedSession[]): PlanChange[] {

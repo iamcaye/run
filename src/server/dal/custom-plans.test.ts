@@ -232,3 +232,110 @@ describe("workouts", () => {
     expect((await scope.workouts.get(w.id))?.steps).toEqual(steps);
   });
 });
+
+describe("planFollows.applySync", () => {
+  const brief = (type: "easy" | "tempo" | "intervals") => ({ type, km: 5, stepsKey: "null" });
+  const sync = (
+    scope: UserScope,
+    followId: string,
+    expectedSeq: number,
+    extra: { date?: string; inserts?: ReturnType<typeof followSession>[]; notice?: { before: "easy" | "tempo"; after: "easy" | "intervals" } } = {},
+  ) =>
+    scope.planFollows.applySync(followId, {
+      expectedSeq,
+      snapshotVersion: expectedSeq + 1,
+      planName: "My plan",
+      authorName: "Ana",
+      snapshot: doc(),
+      deleteIds: [],
+      inserts: extra.inserts ?? [],
+      notice: extra.notice
+        ? {
+            authorName: "Ana",
+            changes: [
+              { date: extra.date ?? "2026-11-10", week: 1, before: brief(extra.notice.before), after: brief(extra.notice.after) },
+            ],
+          }
+        : null,
+    });
+
+  it("rejects a stale sequence and writes nothing", async () => {
+    const scope = forUser(await createTestUser("sync-stale"));
+    const { follow } = await followFor(scope);
+    expect(await sync(scope, follow.id, follow.syncSeq, { inserts: [followSession("2026-11-10")] })).toBe("applied");
+    expect(await sync(scope, follow.id, follow.syncSeq, { inserts: [followSession("2026-11-11")] })).toBe("stale");
+    const dates = (await scope.sessions.listFor({ followId: follow.id })).map((s) => s.date);
+    expect(dates).toEqual(["2026-11-10"]);
+    const now = await scope.planFollows.get(follow.id);
+    expect(now).toMatchObject({ syncSeq: follow.syncSeq + 1, snapshotVersion: follow.syncSeq + 1 });
+  });
+
+  it("merges notices into one open notice, and a dismissed one starts a new notice", async () => {
+    const scope = forUser(await createTestUser("sync-notice"));
+    const { follow } = await followFor(scope);
+    await sync(scope, follow.id, 0, { notice: { before: "tempo", after: "easy" } });
+    await sync(scope, follow.id, 1, { notice: { before: "easy", after: "intervals" } });
+    const open = await scope.planNotices.listOpen();
+    expect(open).toHaveLength(1);
+    expect(open[0]!.changes).toHaveLength(1);
+    expect(open[0]!.changes[0]!.before?.type).toBe("tempo");
+    expect(open[0]!.changes[0]!.after?.type).toBe("intervals");
+
+    expect(await scope.planNotices.dismiss(open[0]!.id)).toBe(true);
+    expect(await scope.planNotices.listOpen()).toEqual([]);
+    await sync(scope, follow.id, 2, { notice: { before: "easy", after: "intervals" } });
+    const again = await scope.planNotices.listOpen();
+    expect(again).toHaveLength(1);
+    expect(again[0]!.id).not.toBe(open[0]!.id);
+  });
+
+  it("deletes the open notice when the merge cancels out", async () => {
+    const scope = forUser(await createTestUser("sync-roundtrip"));
+    const { follow } = await followFor(scope);
+    await sync(scope, follow.id, 0, { notice: { before: "easy", after: "intervals" } });
+    await scope.planFollows.applySync(follow.id, {
+      expectedSeq: 1,
+      snapshotVersion: 2,
+      planName: "My plan",
+      authorName: "Ana",
+      snapshot: doc(),
+      deleteIds: [],
+      inserts: [],
+      notice: {
+        authorName: "Ana",
+        changes: [{ date: "2026-11-10", week: 1, before: brief("intervals"), after: brief("easy") }],
+      },
+    });
+    expect(await scope.planNotices.listOpen()).toEqual([]);
+  });
+});
+
+describe("share state and shared follows", () => {
+  it("setShare stores the token and flag", async () => {
+    const scope = forUser(await createTestUser("share-set"));
+    const { plan } = await followFor(scope);
+    expect(await scope.customPlans.setShare(plan.id, { shareToken: "tok-abc", shareEnabled: true })).toEqual({
+      shareToken: "tok-abc",
+      shareEnabled: true,
+    });
+    expect(await scope.customPlans.setShare(plan.id, { shareEnabled: false })).toEqual({
+      shareToken: "tok-abc",
+      shareEnabled: false,
+    });
+  });
+
+  it("listShared is empty for the author and holds the follow for a follower", async () => {
+    const author = forUser(await createTestUser("share-author"));
+    const followerId = await createTestUser("share-follower");
+    const follower = forUser(followerId);
+    const { plan, follow } = await followFor(author);
+    expect(await author.planFollows.listShared()).toEqual([]);
+    await db()
+      .insert(planFollow)
+      .values({ userId: followerId, customPlanId: plan.id, planName: plan.name, snapshot: plan.doc, authorId: author.userId });
+    const shared = await follower.planFollows.listShared();
+    expect(shared).toHaveLength(1);
+    expect(shared[0]!.customPlanId).toBe(plan.id);
+    expect(follow.authorId).toBe(author.userId);
+  });
+});

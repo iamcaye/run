@@ -112,6 +112,14 @@ export async function syncFollowSessions(
   });
   // Days kept by the previously active goal or plan (done or hand-edited) aren't double-booked.
   const kept = inserts.filter((d) => !taken.has(d.date));
-  await scope.sessions.replace(owner, deleteIds, kept.map(toSessionInput));
-  await scope.planFollows.updateSnapshot(current.id, plan?.name ?? current.planName, doc);
+  await scope.planFollows.applySync(current.id, {
+    expectedSeq: current.syncSeq,
+    snapshotVersion: plan?.version ?? current.snapshotVersion,
+    planName: plan?.name ?? current.planName,
+    authorName: current.authorName,
+    snapshot: doc,
+    deleteIds,
+    inserts: kept.map(toSessionInput),
+    notice: null,
+  });
 }

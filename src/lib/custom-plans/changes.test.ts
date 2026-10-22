@@ -10,11 +10,12 @@ const s = (date: string, type: SessionType, km: number, weekIndex = 2): SyncedSe
   targetKm: km,
   structure: { steps: [{ kind: "steady", km }] },
 });
+const KEY = (km: number) => JSON.stringify([{ kind: "steady", km }]);
 const chg = (w: number, i = 0): PlanChange => ({
   date: `2026-${String(w).padStart(2, "0")}-${String(i + 1).padStart(2, "0")}`,
   week: w,
-  before: { type: "easy", km: 5 },
-  after: { type: "easy", km: 6 },
+  before: { type: "easy", km: 5, stepsKey: "null" },
+  after: { type: "easy", km: 6, stepsKey: "null" },
 });
 
 describe("sessionChanges", () => {
@@ -22,9 +23,14 @@ describe("sessionChanges", () => {
     const removed = [s("2026-11-10", "easy", 8), s("2026-11-12", "tempo", 10), s("2026-11-14", "long", 16)];
     const added = [s("2026-11-10", "easy", 8), s("2026-11-12", "intervals", 11), s("2026-11-15", "easy", 6)];
     expect(sessionChanges(removed, added)).toEqual([
-      { date: "2026-11-12", week: 3, before: { type: "tempo", km: 10 }, after: { type: "intervals", km: 11 } },
-      { date: "2026-11-14", week: 3, before: { type: "long", km: 16 }, after: null },
-      { date: "2026-11-15", week: 3, before: null, after: { type: "easy", km: 6 } },
+      {
+        date: "2026-11-12",
+        week: 3,
+        before: { type: "tempo", km: 10, stepsKey: KEY(10) },
+        after: { type: "intervals", km: 11, stepsKey: KEY(11) },
+      },
+      { date: "2026-11-14", week: 3, before: { type: "long", km: 16, stepsKey: KEY(16) }, after: null },
+      { date: "2026-11-15", week: 3, before: null, after: { type: "easy", km: 6, stepsKey: KEY(6) } },
     ]);
   });
   it("reports a day whose steps differ even if type and km match", () => {
@@ -36,24 +42,37 @@ describe("sessionChanges", () => {
 
 describe("mergeChanges", () => {
   it("keeps the oldest before and newest after, and drops round trips", () => {
-    const a: PlanChange[] = [{ date: "2026-11-12", week: 3, before: { type: "tempo", km: 10 }, after: { type: "easy", km: 6 } }];
-    const b: PlanChange[] = [{ date: "2026-11-12", week: 3, before: { type: "easy", km: 6 }, after: { type: "tempo", km: 10 } }];
+    const a: PlanChange[] = [{ date: "2026-11-12", week: 3, before: { type: "tempo", km: 10, stepsKey: "k" }, after: { type: "easy", km: 6, stepsKey: "k" } }];
+    const b: PlanChange[] = [{ date: "2026-11-12", week: 3, before: { type: "easy", km: 6, stepsKey: "k" }, after: { type: "tempo", km: 10, stepsKey: "k" } }];
     expect(mergeChanges(a, b)).toEqual([]);
   });
+  it("keeps a pace-only change (same type and km, different steps)", () => {
+    const change: PlanChange = {
+      date: "2026-11-12",
+      week: 3,
+      before: { type: "intervals", km: 8, stepsKey: "pace-300" },
+      after: { type: "intervals", km: 8, stepsKey: "pace-290" },
+    };
+    expect(mergeChanges([], [change])).toEqual([change]);
+  });
   it("chains and sorts by date", () => {
-    const a: PlanChange[] = [{ date: "2026-11-12", week: 3, before: null, after: { type: "easy", km: 6 } }];
+    const a: PlanChange[] = [{ date: "2026-11-12", week: 3, before: null, after: { type: "easy", km: 6, stepsKey: "k" } }];
     const b: PlanChange[] = [
-      { date: "2026-11-12", week: 3, before: { type: "easy", km: 6 }, after: { type: "long", km: 9 } },
-      { date: "2026-11-10", week: 3, before: null, after: { type: "easy", km: 4 } },
+      { date: "2026-11-12", week: 3, before: { type: "easy", km: 6, stepsKey: "k" }, after: { type: "long", km: 9, stepsKey: "k" } },
+      { date: "2026-11-10", week: 3, before: null, after: { type: "easy", km: 4, stepsKey: "k" } },
     ];
     expect(mergeChanges(a, b).map((c) => [c.date, c.before, c.after])).toEqual([
-      ["2026-11-10", null, { type: "easy", km: 4 }],
-      ["2026-11-12", null, { type: "long", km: 9 }],
+      ["2026-11-10", null, { type: "easy", km: 4, stepsKey: "k" }],
+      ["2026-11-12", null, { type: "long", km: 9, stepsKey: "k" }],
     ]);
   });
   it("has unique dates and no no-op entries (property)", () => {
     const brief = fc.option(
-      fc.record({ type: fc.constantFrom<SessionType>("easy", "long", "tempo"), km: fc.integer({ min: 1, max: 3 }) }),
+      fc.record({
+        type: fc.constantFrom<SessionType>("easy", "long", "tempo"),
+        km: fc.integer({ min: 1, max: 3 }),
+        stepsKey: fc.constantFrom("a", "b"),
+      }),
       { nil: null },
     );
     const change = fc.record({

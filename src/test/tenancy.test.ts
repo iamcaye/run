@@ -58,6 +58,8 @@ describe("tenancy: user B cannot touch user A's data", () => {
     expect(await b.workouts.get(a.workout.id)).toBeNull();
     expect(await b.workouts.list()).toEqual([]);
     expect(await b.customPlans.get(a.plan.id)).toBeNull();
+    expect(await b.planFollows.listShared()).toEqual([]);
+    expect(await b.planNotices.listOpen()).toEqual([]);
     expect(await b.customPlans.list()).toEqual([]);
     expect(await b.planFollows.get(a.follow.id)).toBeNull();
     expect(await b.planFollows.getForPlan(a.plan.id)).toBeNull();
@@ -89,7 +91,20 @@ describe("tenancy: user B cannot touch user A's data", () => {
     expect(await b.customPlans.delete(a.plan.id)).toBe(false);
     expect(await b.planFollows.activate(a.follow.id, "2026-11-02")).toBeNull();
     expect(await b.planFollows.deactivate(a.follow.id)).toBeNull();
-    await b.planFollows.updateSnapshot(a.follow.id, "pwned", { weeks: [] });
+    expect(await b.customPlans.setShare(a.plan.id, { shareToken: "pwned", shareEnabled: true })).toBeNull();
+    await expect(
+      b.planFollows.applySync(a.follow.id, {
+        expectedSeq: 0,
+        snapshotVersion: 1,
+        planName: "pwned",
+        authorName: null,
+        snapshot: { weeks: [] },
+        deleteIds: [],
+        inserts: [],
+        notice: null,
+      }),
+    ).rejects.toThrow();
+    expect(await b.planNotices.dismiss(randomUUID())).toBe(false);
     expect(await b.sessions.deleteFutureUnfrozen({ followId: a.follow.id }, "2000-01-01")).toBe(0);
 
     // A's data is untouched.
