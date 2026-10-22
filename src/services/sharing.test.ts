@@ -222,6 +222,8 @@ describe("sharing service", () => {
     await updatePlanShare(alice, plan.id, "disable");
     const off = await followSharedPlan(bob, token, { activate: false, startDate: today }, today);
     expect(off.ok === false && off.code).toBe("inactive");
+    expect(await bob.planFollows.getForPlan(plan.id)).toBeNull();
+    expect(await bob.planFollows.getActive()).toBeNull();
   });
 
   it("following without activation leaves the active goal alone and schedules nothing", async () => {
