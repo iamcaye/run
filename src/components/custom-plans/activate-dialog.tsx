@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { Button, Field, FormError, SubmitButton } from "@/components/ui/form";
 import { useFormAction } from "@/components/ui/use-form-action";
 import { addDays, isoWeekday, type LocalDate } from "@/lib/time";
-import { activateCustomPlanAction } from "@/server/actions/custom-plans";
+import type { FormState } from "@/server/actions/form-state";
 
 /** Next Monday, or today when today is a Monday (plan weeks run Mon–Sun). */
 export function nextMonday(today: LocalDate): LocalDate {
@@ -13,19 +13,19 @@ export function nextMonday(today: LocalDate): LocalDate {
 
 /** "Activate" button plus a modal asking for the start date. */
 export function ActivateDialog({
-  planId,
+  action,
   today,
   replacesActive,
   disabledReason,
 }: {
-  planId: string;
+  action: (prev: FormState, fd: FormData) => Promise<FormState>;
   today: LocalDate;
   replacesActive: boolean;
   /** Why activation isn't possible right now (e.g. unsaved changes); null when it is. */
   disabledReason: string | null;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
-  const { state, onSubmit, pending } = useFormAction(activateCustomPlanAction.bind(null, planId));
+  const { state, onSubmit, pending } = useFormAction(action);
 
   return (
     <>

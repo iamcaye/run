@@ -7,7 +7,7 @@ export const metadata = { title: "My plans · Race Training" };
 
 export default async function PlansPage() {
   const { scope, settings } = await requireUserContext();
-  const [plans, follow] = await Promise.all([scope.customPlans.list(), scope.planFollows.getActive()]);
+  const [plans, follow, shared] = await Promise.all([scope.customPlans.list(), scope.planFollows.getActive(), scope.planFollows.listShared()]);
   const updated = new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric", timeZone: settings.timezone });
 
   return (
@@ -58,6 +58,41 @@ export default async function PlansPage() {
           })}
         </ul>
       )}
+
+      {shared.length > 0 ? (
+        <section aria-labelledby="shared-heading" className="flex flex-col gap-3">
+          <h2 id="shared-heading" className="font-condensed text-2xl leading-none font-extrabold uppercase">
+            Shared with me
+          </h2>
+          <ul className="flex flex-col gap-3">
+            {shared.map((f) => (
+              <li key={f.id}>
+                <Link
+                  href={`/plans/shared/${f.id}`}
+                  className="flex flex-col gap-1 rounded-[20px] bg-surface p-4 hover:outline-2 hover:outline-border"
+                >
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="font-condensed text-2xl leading-tight font-bold uppercase">{f.planName}</span>
+                    <span className="flex shrink-0 gap-1.5">
+                      {f.customPlanId === null ? (
+                        <span className="rounded-full bg-background px-2.5 py-0.5 text-xs font-semibold text-muted uppercase">
+                          No longer updated
+                        </span>
+                      ) : null}
+                      {f.status === "active" ? (
+                        <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground uppercase">
+                          Active
+                        </span>
+                      ) : null}
+                    </span>
+                  </div>
+                  <span className="text-sm text-muted">by {f.authorName ?? "a former user"}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </div>
   );
 }

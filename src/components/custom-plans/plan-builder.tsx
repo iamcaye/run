@@ -8,7 +8,7 @@ import { WORKOUT_LIMITS as L } from "@/config/training";
 import { weekTotals } from "@/lib/custom-plans/ops";
 import type { LocalDate } from "@/lib/time";
 import type { Units } from "@/lib/units";
-import { deleteCustomPlanAction } from "@/server/actions/custom-plans";
+import { activateCustomPlanAction, deleteCustomPlanAction } from "@/server/actions/custom-plans";
 import type { LibraryWorkout } from "@/server/actions/workouts";
 import { ActivateDialog } from "./activate-dialog";
 import { ShareDialog } from "./share-dialog";
@@ -95,7 +95,7 @@ export function PlanBuilder({
           </Link>
           <ShareDialog planId={plan.id} initial={share} disabledReason={state.dirty ? "Save your changes before sharing" : null} />
           <ActivateDialog
-            planId={plan.id}
+            action={activateCustomPlanAction.bind(null, plan.id)}
             today={today}
             replacesActive={replacesActive}
             disabledReason={state.dirty ? "Save your changes before activating" : null}

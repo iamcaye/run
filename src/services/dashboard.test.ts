@@ -1,11 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { addDays } from "@/lib/time";
 import { forUser } from "@/server/dal";
 import { createTestUser, goalInput } from "@/test/factories";
 import { getDashboard } from "./dashboard";
 import { createGoal } from "./goals";
 import { createPlanIfMissing } from "./plans";
-import { activateCustomPlan } from "./training";
+import { propagatePlanUpdate, followSharedPlan, updatePlanShare } from "./sharing";
+import { activateCustomPlan, catchUpActiveFollow } from "./training";
 
 const today = "2026-10-18"; // Sunday
 
@@ -161,5 +162,60 @@ describe("dashboard with a custom plan active", () => {
   it("goal users get no plan", async () => {
     const { scope, settings } = await setup();
     expect((await getDashboard(scope, settings, today)).plan).toBeNull();
+  });
+});
+
+describe("dashboard plan update notices", () => {
+  const monday = "2026-10-19";
+  beforeAll(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-19T10:00:00Z"));
+  });
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
+  const run = (km: number) => ({ name: "Easy", type: "easy" as const, notes: null, steps: [{ kind: "steady" as const, km }] });
+  const week = (id: string, km: number) => ({ id, days: Array.from({ length: 7 }, (_, i) => ([2, 4].includes(i + 1) ? run(km) : null)) });
+
+  async function bobFollowsAlice() {
+    const alice = forUser(await createTestUser("alice"));
+    const bob = forUser(await createTestUser("bob"));
+    const created = await alice.customPlans.create({ name: "Shared", description: null });
+    const saved = await alice.customPlans.save(created.id, { name: "Shared", description: null, doc: { weeks: [week("w1", 5), week("w2", 5)] } }, created.version);
+    if (!saved || saved === "conflict") throw new Error("save failed");
+    const share = await updatePlanShare(alice, saved.id, "enable");
+    if (!share?.shareToken) throw new Error("share failed");
+    const r = await followSharedPlan(bob, share.shareToken, { activate: true, startDate: monday }, monday);
+    if (!r.ok) throw new Error("follow failed");
+    const change = async () => {
+      const again = await alice.customPlans.save(saved.id, { name: "Shared", description: null, doc: { weeks: [week("w1", 5), week("w2", 9)] } }, saved.version);
+      if (!again || again === "conflict") throw new Error("save failed");
+    };
+    return { alice, bob, plan: saved, change };
+  }
+
+  it("surfaces the author's update as a notice until it is dismissed", async () => {
+    const { alice, bob, plan, change } = await bobFollowsAlice();
+    const settings = await bob.settings.get();
+    expect((await getDashboard(bob, settings, monday)).planNotices).toEqual([]);
+    await change();
+    await propagatePlanUpdate(plan.id, alice.userId);
+    const d = await getDashboard(bob, settings, monday);
+    expect(d.planNotices).toHaveLength(1);
+    expect(d.planNotices[0]?.headline.startsWith("alice updated your plan:")).toBe(true);
+    expect(d.planNotices[0]?.changes.length).toBeGreaterThan(0);
+    await bob.planNotices.dismiss(d.planNotices[0]!.id);
+    expect((await getDashboard(bob, settings, monday)).planNotices).toEqual([]);
+  });
+
+  it("catch-up yields the notice when propagation never ran", async () => {
+    const { bob, change } = await bobFollowsAlice();
+    const settings = await bob.settings.get();
+    await change();
+    await catchUpActiveFollow(bob, monday);
+    const d = await getDashboard(bob, settings, monday);
+    expect(d.planNotices).toHaveLength(1);
+    expect(d.planNotices[0]?.headline.startsWith("alice updated your plan:")).toBe(true);
   });
 });

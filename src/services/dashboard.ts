@@ -1,5 +1,6 @@
 import "server-only";
 import { METRICS } from "@/config/training";
+import { noticeHeadline, type PlanChange } from "@/lib/custom-plans/changes";
 import { planEndDate, planWeekNumber } from "@/lib/custom-plans/schedule";
 import { needsResultPrompt } from "@/lib/goals/rules";
 import {
@@ -50,6 +51,8 @@ export type Dashboard = {
   thisWeek: DashboardSession[];
   thisWeekVolume: WeekVolume | null;
   pendingAdjustments: AdjustmentView[];
+  /** Open "author updated your plan" notices. */
+  planNotices: { id: string; headline: string; changes: PlanChange[] }[];
   volume: (WeekVolume & { isCurrent: boolean; phase: Phase | null })[];
   acwr: AcwrPoint[];
   acwrToday: AcwrPoint | null;
@@ -63,7 +66,7 @@ const ACWR_CHART_DAYS = 8 * 7;
 
 export async function getDashboard(scope: UserScope, settings: Settings, today: LocalDate): Promise<Dashboard> {
   const weekStart = settings.weekStart as IsoWeekday;
-  const [goals, activeFollow] = await Promise.all([scope.goals.list(), scope.planFollows.getActive()]);
+  const [goals, activeFollow, notices] = await Promise.all([scope.goals.list(), scope.planFollows.getActive(), scope.planNotices.listOpen()]);
   const training = activeTrainingOf(goals.find((g) => g.status === "active") ?? null, activeFollow);
   const goal = training?.kind === "goal" ? training.goal : null;
   const follow = training?.kind === "plan" ? training.follow : null;
@@ -164,6 +167,7 @@ export async function getDashboard(scope: UserScope, settings: Settings, today: 
     totalWeeks,
     thisWeek,
     thisWeekVolume: volume.find((w) => w.isCurrent) ?? null,
+    planNotices: notices.map((n) => ({ id: n.id, headline: noticeHeadline(n.authorName, n.changes), changes: n.changes })),
     // Pending proposals, plus ones decided in the last day so the outcome stays visible.
     pendingAdjustments: adjustments
       .filter((a) => a.status === "proposed" || (a.status !== "superseded" && a.decidedAt && Date.now() - a.decidedAt.getTime() < 86_400_000))

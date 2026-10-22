@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AdjustmentCard } from "@/components/adjustments/adjustment-card";
 import { AcwrChart } from "@/components/charts/acwr-chart";
 import { LongRunChart } from "@/components/charts/long-run-chart";
+import { PlanUpdateCard } from "@/components/custom-plans/plan-update-card";
 import { PlanHero } from "@/components/dashboard/plan-hero";
 import { RaceHero } from "@/components/dashboard/race-hero";
 import { StatTile } from "@/components/dashboard/stat-tile";
@@ -14,6 +15,7 @@ import { addDays, startOfWeek, type IsoWeekday } from "@/lib/time";
 import { formatDistance, formatDistanceValue } from "@/lib/units";
 import { requireUserContext } from "@/server/context";
 import { getDashboard } from "@/services/dashboard";
+import { catchUpActiveFollow } from "@/services/training";
 import { ensureWeeklyAdaptationFor } from "@/services/weekly-adaptation";
 
 export const metadata = { title: "Dashboard · Race Training" };
@@ -21,6 +23,8 @@ export const metadata = { title: "Dashboard · Race Training" };
 export default async function DashboardPage() {
   const { scope, settings, today } = await requireUserContext();
   if (!settings.onboardingCompletedAt) redirect("/onboarding");
+  // A followed plan whose author changed it since the last sync is brought up to date before anything is shown.
+  await catchUpActiveFollow(scope, today).catch((err: unknown) => console.error("plan follow catch-up failed", err));
   let d = await getDashboard(scope, settings, today);
   // On-demand fallback for the weekly job: same function and idempotency as the cron. Checked against the data just
   // loaded (one query); when it does propose changes, reload so they show on this visit.
@@ -82,12 +86,23 @@ export default async function DashboardPage() {
   const nextLong = d.longRuns.find((l) => l.date >= today && l.actualKm === null) ?? null;
 
   const suggestions =
-    d.pendingAdjustments.length > 0 ? (
-      <Card title="Suggested changes">
-        {d.pendingAdjustments.map((a) => (
-          <AdjustmentCard key={a.id} adjustment={a} units={units} />
-        ))}
-      </Card>
+    d.planNotices.length > 0 || d.pendingAdjustments.length > 0 ? (
+      <div className="flex flex-col gap-4">
+        {d.planNotices.length > 0 ? (
+          <Card title="Plan updates">
+            {d.planNotices.map((n) => (
+              <PlanUpdateCard key={n.id} notice={n} units={units} />
+            ))}
+          </Card>
+        ) : null}
+        {d.pendingAdjustments.length > 0 ? (
+          <Card title="Suggested changes">
+            {d.pendingAdjustments.map((a) => (
+              <AdjustmentCard key={a.id} adjustment={a} units={units} />
+            ))}
+          </Card>
+        ) : null}
+      </div>
     ) : null;
 
   // DOM order is the mobile order. At lg the children are placed on a grid: only the rows in use exist

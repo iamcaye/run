@@ -7,10 +7,12 @@ import { PHASE_BG } from "@/components/plan/phase";
 import { PlanOverview } from "@/components/plan/plan-overview";
 import { RegenerateButton } from "@/components/plan/regenerate-button";
 import { dayLabel, SessionCard } from "@/components/plan/session-card";
+import { PlanUpdateCard } from "@/components/custom-plans/plan-update-card";
 import { PlanLinks } from "@/components/custom-plans/plan-links";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-button";
 import { Card } from "@/components/ui/form";
 import { Bone } from "@/components/ui/skeleton";
+import { noticeHeadline } from "@/lib/custom-plans/changes";
 import { planWeekNumber } from "@/lib/custom-plans/schedule";
 import { resolveMonth, type YearMonth } from "@/lib/plan-calendar";
 import { PHASE_LABELS, summarizeWarnings } from "@/lib/planning/describe";
@@ -22,7 +24,7 @@ import type { Goal, PlanFollow, PlannedSession, Settings, UserScope } from "@/se
 import { toAdjustmentView } from "@/services/adjustment-view";
 import { getPlanCalendar } from "@/services/plan-calendar";
 import { planInsights } from "@/services/plans";
-import { getActiveTraining } from "@/services/training";
+import { catchUpActiveFollow, getActiveTraining } from "@/services/training";
 
 export const metadata = { title: "Plan · Race Training" };
 
@@ -30,6 +32,7 @@ type WeekGroup = { start: string; sessions: PlannedSession[] };
 
 export default async function PlanPage({ searchParams }: PageProps<"/plan">) {
   const { scope, settings, today } = await requireUserContext();
+  await catchUpActiveFollow(scope, today).catch((err: unknown) => console.error("plan follow catch-up failed", err));
   const training = await getActiveTraining(scope);
   if (!training) {
     return (
@@ -50,9 +53,10 @@ export default async function PlanPage({ searchParams }: PageProps<"/plan">) {
 
   const goal = training.kind === "goal" ? training.goal : null;
   const follow = training.kind === "plan" ? training.follow : null;
-  const [sessions, adjustments] = await Promise.all([
+  const [sessions, adjustments, notices] = await Promise.all([
     scope.sessions.listFor(training.owner),
     goal ? scope.adjustments.listForGoal(goal.id) : [],
+    scope.planNotices.listOpen(),
   ]);
   const monthParam = (await searchParams).month;
   const month = resolveMonth(typeof monthParam === "string" ? monthParam : undefined, today, sessions);
@@ -72,6 +76,13 @@ export default async function PlanPage({ searchParams }: PageProps<"/plan">) {
 
   return (
     <div className="flex flex-col gap-4">
+      {notices.length > 0 ? (
+        <Card title="Plan updates">
+          {notices.map((n) => (
+            <PlanUpdateCard key={n.id} notice={{ id: n.id, headline: noticeHeadline(n.authorName, n.changes), changes: n.changes }} units={settings.units} />
+          ))}
+        </Card>
+      ) : null}
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_1.3fr] lg:items-end lg:gap-6">
         <div>
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">

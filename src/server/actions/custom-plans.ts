@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 import { env } from "@/config/env";
 import { emptyWeek } from "@/lib/custom-plans/ops";
@@ -11,8 +12,8 @@ import { isLocalDate, type LocalDate } from "@/lib/time";
 import { planMetaSchema, savePlanInputSchema } from "@/lib/validation/custom-plan";
 import { requireUserContext } from "@/server/context";
 import type { CustomPlan, UserScope } from "@/server/dal";
-import { followSharedPlan, updatePlanShare } from "@/services/sharing";
-import { activateCustomPlan, ownPlanSource, stopCustomPlan, syncFollowSessions } from "@/services/training";
+import { duplicateFollowedPlan, followSharedPlan, propagatePlanUpdate, updatePlanShare } from "@/services/sharing";
+import { activateCustomPlan, activateFollow, ownPlanSource, stopCustomPlan, syncFollowSessions } from "@/services/training";
 import { failure, formValues, invalid, type FormState } from "./form-state";
 
 const uuid = z.uuid();
@@ -64,6 +65,8 @@ export async function saveCustomPlanAction(
   if (!saved) return { status: "error", message: "Plan not found" };
 
   revalidatePath("/plans");
+  // Followers of a shared plan are brought up to date after the response; best effort (they also catch up on their next visit).
+  after(() => propagatePlanUpdate(saved.id, scope.userId));
   const synced = await syncIfFollowed(scope, id, today, saved);
   return synced === false ? { status: "saved_not_synced", version: saved.version } : { status: "saved", version: saved.version };
 }
@@ -169,4 +172,35 @@ export async function followSharedPlanAction(token: string, _prev: FormState, fo
   revalidatePath("/plans");
   if (result.kind === "own") redirect(`/plans/${result.planId}`);
   redirect(result.activated ? "/plan" : `/plans/shared/${result.followId}`);
+}
+
+/** Activates a followed (shared) plan from the chosen start date. */
+export async function activateFollowAction(followId: string, _prev: FormState, formData: FormData): Promise<FormState> {
+  const { scope, today } = await requireUserContext();
+  if (!uuid.safeParse(followId).success) return failure("Plan not found");
+  const parsed = z
+    .object({ startDate: z.string().refine(isLocalDate, "Pick a valid date") })
+    .safeParse(formValues(formData));
+  if (!parsed.success) return invalid(parsed.error);
+
+  const result = await activateFollow(scope, followId, parsed.data.startDate, today);
+  if (!result.ok) return failure(result.message);
+  revalidateTraining();
+  revalidatePath("/plans");
+  redirect("/plan");
+}
+
+/** Makes an editable copy of a followed plan and opens it in the builder. */
+export async function duplicateFollowAction(followId: string): Promise<void> {
+  const { scope } = await requireUserContext();
+  const copy = uuid.safeParse(followId).success ? await duplicateFollowedPlan(scope, followId) : null;
+  if (!copy) redirect("/plans");
+  revalidatePath("/plans");
+  redirect(`/plans/${copy.id}`);
+}
+
+export async function dismissPlanNoticeAction(id: string): Promise<void> {
+  const { scope } = await requireUserContext();
+  if (uuid.safeParse(id).success) await scope.planNotices.dismiss(id);
+  revalidateTraining();
 }
