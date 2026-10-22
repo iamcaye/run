@@ -34,3 +34,17 @@ export async function deleteWorkoutAction(id: string): Promise<void> {
   revalidatePath("/workouts");
   redirect("/workouts");
 }
+
+export type LibraryWorkout = PlanWorkout & { id: string };
+
+/** Adds a copy of `workout` to My workouts without leaving the current page (used by the plan builder). */
+export async function saveWorkoutToLibraryAction(
+  workout: PlanWorkout,
+): Promise<{ status: "saved"; workout: LibraryWorkout } | { status: "error"; message: string }> {
+  const { scope } = await requireUserContext();
+  const parsed = planWorkoutSchema.safeParse(workout);
+  if (!parsed.success) return { status: "error", message: "Give the workout a name and valid blocks first." };
+  const { id, name, type, notes, steps } = await scope.workouts.create(parsed.data);
+  revalidatePath("/workouts");
+  return { status: "saved", workout: { id, name, type, notes, steps } };
+}

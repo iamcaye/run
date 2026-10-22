@@ -7,6 +7,7 @@ import { PHASE_BG } from "@/components/plan/phase";
 import { PlanOverview } from "@/components/plan/plan-overview";
 import { RegenerateButton } from "@/components/plan/regenerate-button";
 import { dayLabel, SessionCard } from "@/components/plan/session-card";
+import { PlanLinks } from "@/components/custom-plans/plan-links";
 import { Card } from "@/components/ui/form";
 import { Bone } from "@/components/ui/skeleton";
 import { resolveMonth, type YearMonth } from "@/lib/plan-calendar";
@@ -28,11 +29,17 @@ export default async function PlanPage({ searchParams }: PageProps<"/plan">) {
   const goal = await scope.goals.getActive();
   if (!goal) {
     return (
-      <Card title="No active goal">
-        <p className="text-sm">Your plan is built from your active goal.</p>
-        <Link href="/goals" className="self-start text-sm font-medium text-accent">
-          Choose or create a goal →
-        </Link>
+      <Card title="No active goal" action={<PlanLinks />}>
+        <p className="text-sm">Your plan is built from your active goal — or from a plan you build yourself.</p>
+        <p className="flex flex-wrap gap-x-2 text-sm font-medium">
+          <Link href="/goals" className="text-accent">
+            Choose or create a goal →
+          </Link>
+          <span className="text-muted">·</span>
+          <Link href="/plans" className="text-accent">
+            or build your own plan →
+          </Link>
+        </p>
       </Card>
     );
   }
@@ -59,7 +66,10 @@ export default async function PlanPage({ searchParams }: PageProps<"/plan">) {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_1.3fr] lg:items-end lg:gap-6">
         <div>
-          <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">{goal.name}</h1>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <h1 className="font-condensed text-3xl leading-none font-extrabold uppercase">{goal.name}</h1>
+            <PlanLinks />
+          </div>
           <GoalFacts goal={goal} units={settings.units} today={today} />
         </div>
 
