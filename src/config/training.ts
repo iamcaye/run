@@ -267,4 +267,6 @@ export const EDITOR_DEFAULTS = {
   /** Smallest value a typed input accepts (distance in user units). */
   minDistance: 0.01,
   minSeconds: 1,
+  /** Stored paces (sec/km) keep this precision so typed min/mi paces redisplay exactly. */
+  paceResolutionSec: 0.01,
 } as const;

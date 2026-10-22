@@ -6,6 +6,7 @@ import { stepSchema } from "@/lib/validation/custom-plan";
 import {
   type BlockDisplay,
   estimateLabel,
+  formatPaceInput,
   fromDisplay,
   newBlock,
   parseDistance,
@@ -117,6 +118,26 @@ describe("toDisplay / fromDisplay", () => {
   });
 });
 
+describe("typed paces", () => {
+  it.each([
+    ["6:30", "mi"],
+    ["4:59", "mi"],
+    ["7:15", "mi"],
+    ["4:00", "km"],
+  ] as const)("typing %s per %s stores a pace that redisplays as typed", (typed, units) => {
+    const d = toDisplay(newBlock("steady"), units);
+    const stored = fromDisplay({ ...d, target: { kind: "pace", secPerUnit: parsePace(typed)! } }, units);
+    expect(stepSchema.safeParse(stored).success).toBe(true);
+    const shown = toDisplay(stored, units).target;
+    if (shown.kind !== "pace") throw new Error("target lost");
+    expect(formatPaceInput(shown.secPerUnit)).toBe(typed);
+  });
+  it("stores sec/km rounded to 0.01 s", () => {
+    const stored = fromDisplay({ kind: "steady", amount: { measure: "distance", value: 1 }, target: { kind: "pace", secPerUnit: 390 } }, "mi");
+    expect(stored).toMatchObject({ target: { kind: "pace", secPerKm: 242.33 } });
+  });
+});
+
 describe("toggleMeasure", () => {
   it("converts a distance block to an equivalent, step-snapped time and back", () => {
     const d = toDisplay({ kind: "warmup", km: 2 }, "km");
@@ -166,9 +187,9 @@ describe("stepValue", () => {
 });
 
 describe("stepPace", () => {
-  it("keeps stepping until the stored whole-second sec/km changes", () => {
-    // 242 s/km = 6:29.5 /mi; +5 snaps to 6:30 /mi, which still stores 242, so it moves on to 6:35.
-    expect(stepPace(242 * KM_PER_MI, 1, "mi")).toBe(395);
+  it("keeps stepping until the stored sec/km changes", () => {
+    // 242 s/km = 6:29.5 /mi; +5 snaps to 6:30 /mi (stored 242.33).
+    expect(stepPace(242 * KM_PER_MI, 1, "mi")).toBe(390);
     expect(stepPace(245 * KM_PER_MI, -1, "mi")).toBe(390);
     expect(stepPace(240, 1, "km")).toBe(245);
   });

@@ -44,6 +44,9 @@ const unitFactor = (units: Units) => (units === "mi" ? KM_PER_MI : 1);
 /** Strips binary float noise (0.1 + 0.2) without visibly rounding anything. */
 const clean = (n: number) => Math.round(n * 1e9) / 1e9;
 
+/** Stored sec/km precision (0.01 s): fine enough that every whole-second min/mi pace redisplays as typed. */
+const storePace = (secPerKm: number) => Math.round(secPerKm / D.paceResolutionSec) * D.paceResolutionSec;
+
 function clamp(n: number, lo: number, hi: number): number {
   if (!Number.isFinite(n)) return n === Number.POSITIVE_INFINITY ? hi : lo;
   return Math.min(hi, Math.max(lo, n));
@@ -153,7 +156,7 @@ function targetFrom(t: DisplayTarget, units: Units): StepTarget | undefined {
     case "pace":
       return {
         kind: "pace",
-        secPerKm: clamp(Math.round(t.secPerUnit / unitFactor(units)), L.minPaceSecPerKm, L.maxPaceSecPerKm),
+        secPerKm: clamp(clean(storePace(t.secPerUnit / unitFactor(units))), L.minPaceSecPerKm, L.maxPaceSecPerKm),
       };
     case "hr_zone":
       return { kind: "hr_zone", zone: t.zone };
@@ -213,19 +216,19 @@ export function stepValue(value: number, step: number, dir: 1 | -1, max: number,
 }
 
 /**
- * −/+ on a pace (seconds per user unit). Stored paces are whole sec/km, so in miles a 5 s step
- * can round back to the same stored value; keep stepping until the stored pace actually changes.
+ * −/+ on a pace (seconds per user unit). Stored paces are rounded sec/km; should a step ever round
+ * back to the same stored value, keep stepping until the stored pace actually changes.
  */
 export function stepPace(secPerUnit: number, dir: 1 | -1, units: Units): number {
   const f = unitFactor(units);
   const { step, min, max } = paceBounds(units);
-  const stored = Math.round(secPerUnit / f);
+  const stored = clean(storePace(secPerUnit / f));
   let v = secPerUnit;
   for (let i = 0; i < 3; i++) {
     const next = stepValue(v, step, dir, max, min);
     if (next === v) return v;
     v = next;
-    if (Math.round(v / f) !== stored) return v;
+    if (clean(storePace(v / f)) !== stored) return v;
   }
   return v;
 }
