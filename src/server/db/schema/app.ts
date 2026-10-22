@@ -17,6 +17,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { LEVELS, SESSION_TYPES } from "@/config/training";
+import type { PlanChange } from "@/lib/custom-plans/changes";
 import type { CustomPlanDoc, WorkoutType } from "@/lib/custom-plans/types";
 import type { HrSample } from "@/lib/import/types";
 import type { AdjustmentChange, SessionStructure, StructureStep } from "@/lib/planning/types";
@@ -162,6 +163,9 @@ export const customPlan = pgTable(
     description: text("description"),
     doc: jsonb("doc").$type<CustomPlanDoc>().notNull().default({ weeks: [] }),
     version: integer("version").notNull().default(1),
+    /** Unguessable link token; null until sharing is first enabled. */
+    shareToken: text("share_token").unique(),
+    shareEnabled: boolean("share_enabled").notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -180,6 +184,12 @@ export const planFollow = pgTable(
     customPlanId: uuid("custom_plan_id").references(() => customPlan.id, { onDelete: "set null" }),
     planName: text("plan_name").notNull(),
     snapshot: jsonb("snapshot").$type<CustomPlanDoc>().notNull(),
+    /** Plan author; null once they are gone. Own plans have authorId = userId. */
+    authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
+    /** Author's display name, kept after the author is gone (null for own plans). */
+    authorName: text("author_name"),
+    snapshotVersion: integer("snapshot_version").notNull().default(0),
+    syncSeq: integer("sync_seq").notNull().default(0),
     startDate: localDate("start_date"),
     status: planFollowStatusEnum("status").notNull().default("inactive"),
     createdAt: createdAt(),
@@ -190,6 +200,28 @@ export const planFollow = pgTable(
     uniqueIndex("plan_follow_user_plan_uq")
       .on(t.userId, t.customPlanId)
       .where(sql`${t.customPlanId} is not null`),
+  ],
+);
+
+/** "The author changed this plan" notice for a follower; at most one open (undismissed) per follow. */
+export const planUpdateNotice = pgTable(
+  "plan_update_notice",
+  {
+    id: id(),
+    userId: userId(),
+    followId: uuid("follow_id")
+      .notNull()
+      .references(() => planFollow.id, { onDelete: "cascade" }),
+    authorName: text("author_name").notNull(),
+    changes: jsonb("changes").$type<PlanChange[]>().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    dismissedAt: timestamp("dismissed_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("plan_update_notice_one_open")
+      .on(t.followId)
+      .where(sql`${t.dismissedAt} is null`),
   ],
 );
 

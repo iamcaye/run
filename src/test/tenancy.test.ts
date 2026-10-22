@@ -5,7 +5,8 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { forUser, NotOwnedError } from "@/server/dal";
 import { db } from "@/server/db/client";
 import * as appSchema from "@/server/db/schema/app";
-import { goal } from "@/server/db/schema";
+import { customPlan, goal, planFollow } from "@/server/db/schema";
+import { findSharedPlan, followFromToken, generateShareToken, listActiveFollowers, readFollowedPlan } from "@/server/system/shared-plans";
 import { createPopulatedUser, createTestUser, goalInput } from "./factories";
 
 /** Tables that are deliberately not user-owned. */
@@ -17,7 +18,7 @@ const userOwnedTables = (Object.values(appSchema) as unknown[]).filter(
 
 describe("schema", () => {
   it("every user-owned table has a user_id column", () => {
-    expect(userOwnedTables.length).toBeGreaterThanOrEqual(12);
+    expect(userOwnedTables.length).toBeGreaterThanOrEqual(13);
     for (const table of userOwnedTables) {
       const cols = Object.values(getTableColumns(table)).map((c) => c.name);
       expect(cols, getTableName(table)).toContain("user_id");
@@ -244,5 +245,107 @@ describe("account deletion", () => {
     }
     expect(await survivor.scope.goals.get(survivor.goal.id)).not.toBeNull();
     expect(await survivor.scope.activities.routePoints(survivor.activity.id)).toHaveLength(2);
+  });
+});
+
+describe("shared plans", () => {
+  const doc = { weeks: [{ id: "w1", days: [{ name: "Easy", type: "easy" as const, notes: null, steps: [{ kind: "warmup" as const, km: 5 }] }, null, null, null, null, null, null] }] };
+  let alice: string;
+  let bob: string;
+  let planId: string;
+  let token: string;
+
+  const setShare = (shareEnabled: boolean, shareToken = token) =>
+    db().update(customPlan).set({ shareEnabled, shareToken }).where(eq(customPlan.id, planId));
+
+  beforeAll(async () => {
+    alice = await createTestUser("alice");
+    bob = await createTestUser("bob");
+    const plan = await forUser(alice).customPlans.create({ name: "Alice base", description: "desc" });
+    planId = plan.id;
+    await forUser(alice).customPlans.save(plan.id, { name: "Alice base", description: "desc", doc }, plan.version);
+    token = generateShareToken();
+    await setShare(true);
+  });
+
+  it("exposes only the public fields", async () => {
+    const shared = await findSharedPlan(token);
+    expect(Object.keys(shared!).sort()).toEqual(
+      ["authorId", "authorName", "description", "doc", "name", "planId", "version"],
+    );
+    expect(shared!.authorName).toBe("alice");
+    expect(JSON.stringify(shared)).not.toContain("@test.local");
+  });
+
+  it("returns null for malformed tokens", async () => {
+    expect(await findSharedPlan("")).toBeNull();
+    expect(await findSharedPlan("nope")).toBeNull();
+  });
+
+  it("disabled link: no lookup, no follow", async () => {
+    await setShare(false);
+    expect(await findSharedPlan(token)).toBeNull();
+    expect(await followFromToken(bob, token)).toEqual({ kind: "inactive" });
+    await setShare(true);
+  });
+
+  it("follow grants reads that survive disabling the link", async () => {
+    expect(await readFollowedPlan(bob, planId)).toBeNull();
+    const res = await followFromToken(bob, token);
+    expect(res.kind).toBe("follow");
+    const followed = await readFollowedPlan(bob, planId);
+    expect(followed!.doc).toEqual(doc);
+    expect(followed!.authorName).toBe("alice");
+    await setShare(false);
+    expect(await readFollowedPlan(bob, planId)).not.toBeNull();
+    await setShare(true);
+  });
+
+  it("follow is idempotent and records authorship", async () => {
+    const gina = await createTestUser("gina");
+    const first = await followFromToken(gina, token);
+    const second = await followFromToken(gina, token);
+    if (first.kind !== "follow" || second.kind !== "follow") throw new Error("expected follows");
+    expect(first.created).toBe(true);
+    expect(second.follow.id).toBe(first.follow.id);
+    expect(second.created).toBe(false);
+    expect(second.follow).toMatchObject({ status: "inactive", authorId: alice, authorName: "alice", planName: "Alice base" });
+  });
+
+  it("the author following their own link gets 'own'", async () => {
+    expect(await followFromToken(alice, token)).toEqual({ kind: "own", planId });
+  });
+
+  it("a regenerated token invalidates the old one", async () => {
+    const next = generateShareToken();
+    await setShare(true, next);
+    expect(await findSharedPlan(token)).toBeNull();
+    expect(await findSharedPlan(next)).not.toBeNull();
+    await setShare(true, token);
+  });
+
+  it("listActiveFollowers excludes the author and inactive follows", async () => {
+    const carol = await createTestUser("carol");
+    const dave = await createTestUser("dave");
+    const c = await followFromToken(carol, token);
+    await followFromToken(dave, token);
+    if (c.kind !== "follow") throw new Error("expected follow");
+    await db().execute(sql`update plan_follow set status = 'active' where id = ${c.follow.id}`);
+    await db().execute(
+      sql`insert into plan_follow (user_id, custom_plan_id, plan_name, snapshot, status, author_id) values (${alice}, ${planId}, 'x', '{"weeks":[]}'::jsonb, 'active', ${alice})`,
+    );
+    expect(await listActiveFollowers(planId, alice)).toEqual([{ userId: carol, followId: c.follow.id }]);
+  });
+
+  it("deleting the author keeps followers' follows with the author name", async () => {
+    const author = await createTestUser("erin");
+    const follower = await createTestUser("frank");
+    const plan = await forUser(author).customPlans.create({ name: "Erin plan", description: null });
+    const t = generateShareToken();
+    await db().update(customPlan).set({ shareEnabled: true, shareToken: t }).where(eq(customPlan.id, plan.id));
+    await followFromToken(follower, t);
+    await forUser(author).deleteAccount();
+    const [row] = await db().select().from(planFollow).where(eq(planFollow.userId, follower));
+    expect(row).toMatchObject({ customPlanId: null, authorId: null, authorName: "erin" });
   });
 });

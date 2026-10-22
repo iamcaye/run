@@ -271,3 +271,6 @@ export const EDITOR_DEFAULTS = {
   /** Stored paces (sec/km) keep this precision so typed min/mi paces redisplay exactly. */
   paceResolutionSec: 0.01,
 } as const;
+
+/** Plan sharing: share-link token size and how many followers' sessions are synced at once. */
+export const SHARING = { tokenBytes: 16, propagateConcurrency: 4 } as const;

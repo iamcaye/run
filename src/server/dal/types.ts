@@ -28,6 +28,7 @@ export type CustomPlanInput = { name: string; description: string | null };
 export type CustomPlanSave = CustomPlanInput & { doc: CustomPlan["doc"] };
 
 export type PlanFollow = InferSelectModel<typeof s.planFollow>;
+export type PlanNotice = InferSelectModel<typeof s.planUpdateNotice>;
 export type PlanFollowStatus = PlanFollow["status"];
 
 export type Activity = InferSelectModel<typeof s.activity>;
